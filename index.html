@@ -12,11 +12,28 @@
       justify-content: center;
       height: 100vh;
       color: white;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
+    }
+
+    #star {
+      font-size: 80px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.4; transform: scale(0.9); }
     }
   </style>
 </head>
 <body>
-  🌌 Mini Universe is Alive
+
+  <div id="star">⭐</div>
+
+  <script>
+    console.log("Mini Universe JS is running");
+  </script>
+
 </body>
 </html>
