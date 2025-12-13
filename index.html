@@ -20,35 +20,53 @@
 <script type="module">
   import * as THREE from "./three/three.module.min.js";
 
-  /* ===== SCENE ===== */
+  /* ================= SCENE ================= */
   const scene = new THREE.Scene();
 
-  /* ===== CAMERA ===== */
+  /* ================= CAMERA ================= */
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
     5000
   );
-  camera.position.set(0, 10, 30);
 
-  /* ===== RENDERER ===== */
+  /* Camera orbit variables (old-project style) */
+  let isDragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  let theta = Math.PI / 4;   // horizontal angle
+  let phi   = Math.PI / 3;   // vertical angle
+  let radius = 35;           // distance from sun
+
+  function updateCamera() {
+    const x = radius * Math.sin(phi) * Math.sin(theta);
+    const y = radius * Math.cos(phi);
+    const z = radius * Math.sin(phi) * Math.cos(theta);
+    camera.position.set(x, y, z);
+    camera.lookAt(0, 0, 0);
+  }
+
+  updateCamera();
+
+  /* ================= RENDERER ================= */
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ===== LIGHTS ===== */
-  const sunLight = new THREE.PointLight(0xffffff, 4);
-  sunLight.position.set(0, 0, 0);
-  scene.add(sunLight);
+  /* ================= LIGHTING ================= */
+  const sunlight = new THREE.PointLight(0xffffff, 4);
+  sunlight.position.set(0, 0, 0);
+  scene.add(sunlight);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
-  /* ===== TEXTURE LOADER ===== */
+  /* ================= TEXTURE LOADER ================= */
   const loader = new THREE.TextureLoader();
 
-  /* ===== SUN ===== */
+  /* ================= SUN ================= */
   const sun = new THREE.Mesh(
     new THREE.SphereGeometry(3, 32, 32),
     new THREE.MeshBasicMaterial({
@@ -57,15 +75,15 @@
   );
   scene.add(sun);
 
-  /* ===== PLANETS ===== */
+  /* ================= PLANETS ================= */
   const planetsData = [
-    { size: 0.4, distance: 6,  speed: 0.04, texture: "mercury.jpg" },
+    { size: 0.4, distance: 6,  speed: 0.040, texture: "mercury.jpg" },
     { size: 0.6, distance: 8,  speed: 0.032, texture: "venus.jpg" },
     { size: 0.7, distance: 10, speed: 0.026, texture: "earth.jpg" },
     { size: 0.5, distance: 12, speed: 0.022, texture: "mars.jpg" },
     { size: 1.6, distance: 16, speed: 0.016, texture: "jupiter.jpg" },
     { size: 1.4, distance: 20, speed: 0.013, texture: "saturn.jpg" },
-    { size: 1.2, distance: 24, speed: 0.01,  texture: "uranus.jpg" },
+    { size: 1.2, distance: 24, speed: 0.010, texture: "uranus.jpg" },
     { size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
     { size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
     { size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
@@ -92,17 +110,11 @@
     planets.push({ orbit, planet, speed: p.speed });
   });
 
-  /* ===== SIMPLE CAMERA CONTROLS ===== */
-  let isDragging = false;
-  let prevX = 0;
-  let prevY = 0;
-  let rotationX = 0;
-  let rotationY = 0;
-
+  /* ================= MOUSE CONTROLS ================= */
   window.addEventListener("mousedown", e => {
     isDragging = true;
-    prevX = e.clientX;
-    prevY = e.clientY;
+    lastX = e.clientX;
+    lastY = e.clientY;
   });
 
   window.addEventListener("mouseup", () => {
@@ -112,28 +124,27 @@
   window.addEventListener("mousemove", e => {
     if (!isDragging) return;
 
-    const deltaX = e.clientX - prevX;
-    const deltaY = e.clientY - prevY;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
 
-    rotationY += deltaX * 0.005;
-    rotationX += deltaY * 0.005;
+    theta -= dx * 0.005;
+    phi   -= dy * 0.005;
 
-    camera.position.x = Math.sin(rotationY) * 30;
-    camera.position.z = Math.cos(rotationY) * 30;
-    camera.position.y = 10 + rotationX * 5;
+    phi = Math.max(0.2, Math.min(Math.PI - 0.2, phi));
 
-    camera.lookAt(0, 0, 0);
+    updateCamera();
 
-    prevX = e.clientX;
-    prevY = e.clientY;
+    lastX = e.clientX;
+    lastY = e.clientY;
   });
 
   window.addEventListener("wheel", e => {
-    camera.position.z += e.deltaY * 0.02;
-    camera.position.z = Math.min(Math.max(camera.position.z, 10), 120);
+    radius += e.deltaY * 0.05;
+    radius = Math.max(10, Math.min(120, radius));
+    updateCamera();
   });
 
-  /* ===== ANIMATE ===== */
+  /* ================= ANIMATION ================= */
   function animate() {
     requestAnimationFrame(animate);
 
@@ -148,7 +159,7 @@
   }
   animate();
 
-  /* ===== RESIZE ===== */
+  /* ================= RESIZE ================= */
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
