@@ -15,6 +15,7 @@
 
 <script type="module">
   import * as THREE from "./three/three.module.min.js";
+  import { OrbitControls } from "./three/OrbitControls.js";
 
   /* ================= SCENE ================= */
   const scene = new THREE.Scene();
@@ -24,23 +25,29 @@
     75,
     window.innerWidth / window.innerHeight,
     0.1,
-    3000
+    5000
   );
   camera.position.set(0, 10, 28);
-  camera.lookAt(0, 0, 0);
 
   /* ================= RENDERER ================= */
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ================= LIGHTS ================= */
-  // Sun light
+  /* ================= CONTROLS ================= */
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.minDistance = 8;
+  controls.maxDistance = 120;
+
+  /* ================= LIGHTING ================= */
   const sunlight = new THREE.PointLight(0xffffff, 4);
   sunlight.position.set(0, 0, 0);
   scene.add(sunlight);
 
-  // Ambient light (fixes dark planets)
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
@@ -58,18 +65,16 @@
 
   /* ================= PLANET DATA ================= */
   const planetsData = [
-    { name: "Mercury",   size: 0.4, distance: 6,  speed: 0.040, texture: "mercury.jpg" },
-    { name: "Venus",     size: 0.6, distance: 8,  speed: 0.032, texture: "venus.jpg" },
-    { name: "Earth",     size: 0.7, distance: 10, speed: 0.026, texture: "earth.jpg" },
-    { name: "Mars",      size: 0.5, distance: 12, speed: 0.022, texture: "mars.jpg" },
-    { name: "Jupiter",   size: 1.6, distance: 16, speed: 0.016, texture: "jupiter.jpg" },
-    { name: "Saturn",    size: 1.4, distance: 20, speed: 0.013, texture: "saturn.jpg" },
-    { name: "Uranus",    size: 1.2, distance: 24, speed: 0.010, texture: "uranus.jpg" },
-    { name: "Neptune",   size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
-    { name: "Pluto",     size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
-
-    // 🌌 Special planet
-    { name: "Exoplanet", size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
+    { size: 0.4, distance: 6,  speed: 0.040, texture: "mercury.jpg" },
+    { size: 0.6, distance: 8,  speed: 0.032, texture: "venus.jpg" },
+    { size: 0.7, distance: 10, speed: 0.026, texture: "earth.jpg" },
+    { size: 0.5, distance: 12, speed: 0.022, texture: "mars.jpg" },
+    { size: 1.6, distance: 16, speed: 0.016, texture: "jupiter.jpg" },
+    { size: 1.4, distance: 20, speed: 0.013, texture: "saturn.jpg" },
+    { size: 1.2, distance: 24, speed: 0.010, texture: "uranus.jpg" },
+    { size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
+    { size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
+    { size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
   ];
 
   const planets = [];
@@ -91,26 +96,21 @@
     planet.position.x = data.distance;
     orbit.add(planet);
 
-    planets.push({
-      orbit,
-      planet,
-      speed: data.speed
-    });
+    planets.push({ orbit, planet, speed: data.speed });
   });
 
-  /* ================= ANIMATION ================= */
+  /* ================= ANIMATION LOOP ================= */
   function animate() {
     requestAnimationFrame(animate);
 
-    // Sun rotation
     sun.rotation.y += 0.003;
 
-    // Planets orbit + self rotation
     planets.forEach(p => {
       p.orbit.rotation.y += p.speed;
       p.planet.rotation.y += 0.01;
     });
 
+    controls.update();
     renderer.render(scene, camera);
   }
   animate();
@@ -125,3 +125,4 @@
 
 </body>
 </html>
+
