@@ -8,6 +8,10 @@
       margin: 0;
       overflow: hidden;
       background: black;
+      cursor: grab;
+    }
+    body:active {
+      cursor: grabbing;
     }
   </style>
 </head>
@@ -15,46 +19,36 @@
 
 <script type="module">
   import * as THREE from "./three/three.module.min.js";
-  import { OrbitControls } from "./three/OrbitControls.js";
 
-  /* ================= SCENE ================= */
+  /* ===== SCENE ===== */
   const scene = new THREE.Scene();
 
-  /* ================= CAMERA ================= */
+  /* ===== CAMERA ===== */
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
     5000
   );
-  camera.position.set(0, 10, 28);
+  camera.position.set(0, 10, 30);
 
-  /* ================= RENDERER ================= */
+  /* ===== RENDERER ===== */
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ================= CONTROLS ================= */
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.enableZoom = true;
-  controls.enablePan = true;
-  controls.minDistance = 8;
-  controls.maxDistance = 120;
-
-  /* ================= LIGHTING ================= */
-  const sunlight = new THREE.PointLight(0xffffff, 4);
-  sunlight.position.set(0, 0, 0);
-  scene.add(sunlight);
+  /* ===== LIGHTS ===== */
+  const sunLight = new THREE.PointLight(0xffffff, 4);
+  sunLight.position.set(0, 0, 0);
+  scene.add(sunLight);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
-  /* ================= TEXTURE LOADER ================= */
+  /* ===== TEXTURE LOADER ===== */
   const loader = new THREE.TextureLoader();
 
-  /* ================= SUN ================= */
+  /* ===== SUN ===== */
   const sun = new THREE.Mesh(
     new THREE.SphereGeometry(3, 32, 32),
     new THREE.MeshBasicMaterial({
@@ -63,15 +57,15 @@
   );
   scene.add(sun);
 
-  /* ================= PLANET DATA ================= */
+  /* ===== PLANETS ===== */
   const planetsData = [
-    { size: 0.4, distance: 6,  speed: 0.040, texture: "mercury.jpg" },
+    { size: 0.4, distance: 6,  speed: 0.04, texture: "mercury.jpg" },
     { size: 0.6, distance: 8,  speed: 0.032, texture: "venus.jpg" },
     { size: 0.7, distance: 10, speed: 0.026, texture: "earth.jpg" },
     { size: 0.5, distance: 12, speed: 0.022, texture: "mars.jpg" },
     { size: 1.6, distance: 16, speed: 0.016, texture: "jupiter.jpg" },
     { size: 1.4, distance: 20, speed: 0.013, texture: "saturn.jpg" },
-    { size: 1.2, distance: 24, speed: 0.010, texture: "uranus.jpg" },
+    { size: 1.2, distance: 24, speed: 0.01,  texture: "uranus.jpg" },
     { size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
     { size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
     { size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
@@ -79,27 +73,67 @@
 
   const planets = [];
 
-  /* ================= CREATE PLANETS ================= */
-  planetsData.forEach(data => {
+  planetsData.forEach(p => {
     const orbit = new THREE.Object3D();
     scene.add(orbit);
 
     const planet = new THREE.Mesh(
-      new THREE.SphereGeometry(data.size, 32, 32),
+      new THREE.SphereGeometry(p.size, 32, 32),
       new THREE.MeshStandardMaterial({
-        map: loader.load("./assets/planets/" + data.texture),
+        map: loader.load("./assets/planets/" + p.texture),
         roughness: 0.6,
         metalness: 0.1
       })
     );
 
-    planet.position.x = data.distance;
+    planet.position.x = p.distance;
     orbit.add(planet);
 
-    planets.push({ orbit, planet, speed: data.speed });
+    planets.push({ orbit, planet, speed: p.speed });
   });
 
-  /* ================= ANIMATION LOOP ================= */
+  /* ===== SIMPLE CAMERA CONTROLS ===== */
+  let isDragging = false;
+  let prevX = 0;
+  let prevY = 0;
+  let rotationX = 0;
+  let rotationY = 0;
+
+  window.addEventListener("mousedown", e => {
+    isDragging = true;
+    prevX = e.clientX;
+    prevY = e.clientY;
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDragging = false;
+  });
+
+  window.addEventListener("mousemove", e => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - prevX;
+    const deltaY = e.clientY - prevY;
+
+    rotationY += deltaX * 0.005;
+    rotationX += deltaY * 0.005;
+
+    camera.position.x = Math.sin(rotationY) * 30;
+    camera.position.z = Math.cos(rotationY) * 30;
+    camera.position.y = 10 + rotationX * 5;
+
+    camera.lookAt(0, 0, 0);
+
+    prevX = e.clientX;
+    prevY = e.clientY;
+  });
+
+  window.addEventListener("wheel", e => {
+    camera.position.z += e.deltaY * 0.02;
+    camera.position.z = Math.min(Math.max(camera.position.z, 10), 120);
+  });
+
+  /* ===== ANIMATE ===== */
   function animate() {
     requestAnimationFrame(animate);
 
@@ -110,12 +144,11 @@
       p.planet.rotation.y += 0.01;
     });
 
-    controls.update();
     renderer.render(scene, camera);
   }
   animate();
 
-  /* ================= RESIZE ================= */
+  /* ===== RESIZE ===== */
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -125,4 +158,3 @@
 
 </body>
 </html>
-
