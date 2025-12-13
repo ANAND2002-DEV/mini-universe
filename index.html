@@ -33,16 +33,14 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* Light (Sun emits light) */
+  /* Light */
   const light = new THREE.PointLight(0xffffff, 2);
   light.position.set(0, 0, 0);
   scene.add(light);
 
   /* Texture Loader */
   const textureLoader = new THREE.TextureLoader();
-  const sunTexture = textureLoader.load(
-    "./assets/planets/sun.jpg"
-  );
+  const sunTexture = textureLoader.load("./assets/planets/sun.jpg");
 
   /* Sun */
   const sun = new THREE.Mesh(
@@ -51,18 +49,10 @@
   );
   scene.add(sun);
 
-  /* Rotation test marker (temporary) */
-  const marker = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.1, 0.1),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-  );
-  marker.position.x = 1;
-  sun.add(marker);
-
   /* Animate */
   function animate() {
     requestAnimationFrame(animate);
-    sun.rotation.y += 0.02; // fast so you SEE rotation
+    sun.rotation.y += 0.003; // smooth realistic rotation
     renderer.render(scene, camera);
   }
   animate();
