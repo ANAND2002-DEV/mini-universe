@@ -26,7 +26,7 @@
     0.1,
     3000
   );
-  camera.position.set(0, 15, 35);
+  camera.position.set(0, 10, 28);
   camera.lookAt(0, 0, 0);
 
   /* ================= RENDERER ================= */
@@ -34,10 +34,15 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ================= LIGHT ================= */
-  const sunlight = new THREE.PointLight(0xffffff, 2.5);
+  /* ================= LIGHTS ================= */
+  // Sun light
+  const sunlight = new THREE.PointLight(0xffffff, 4);
   sunlight.position.set(0, 0, 0);
   scene.add(sunlight);
+
+  // Ambient light (fixes dark planets)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
 
   /* ================= TEXTURE LOADER ================= */
   const loader = new THREE.TextureLoader();
@@ -63,7 +68,7 @@
     { name: "Neptune",   size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
     { name: "Pluto",     size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
 
-    // 🌌 Special 10th planet
+    // 🌌 Special planet
     { name: "Exoplanet", size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
   ];
 
@@ -77,7 +82,9 @@
     const planet = new THREE.Mesh(
       new THREE.SphereGeometry(data.size, 32, 32),
       new THREE.MeshStandardMaterial({
-        map: loader.load("./assets/planets/" + data.texture)
+        map: loader.load("./assets/planets/" + data.texture),
+        roughness: 0.6,
+        metalness: 0.1
       })
     );
 
