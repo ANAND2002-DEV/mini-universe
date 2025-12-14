@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mini Universe – Interactive Solar System</title>
+  <title>Mini Universe – Bright Planets</title>
   <style>
     body {
       margin: 0;
@@ -39,37 +39,59 @@
   let tPhi = phi;
   let tRadius = radius;
 
-  // Focus target (Sun by default)
-  const focusTarget = new THREE.Vector3(0, 0, 0);
+  let focusedObject = null;
+
+  function getFocus() {
+    if (focusedObject) {
+      const v = new THREE.Vector3();
+      focusedObject.getWorldPosition(v);
+      return v;
+    }
+    return new THREE.Vector3(0, 0, 0);
+  }
 
   function updateCamera() {
     theta += (tTheta - theta) * 0.07;
     phi   += (tPhi - phi) * 0.07;
-    radius += (tRadius - radius) * 0.1;
+    radius += (tRadius - radius) * 0.12;
 
-    const x = focusTarget.x + radius * Math.sin(phi) * Math.sin(theta);
-    const y = focusTarget.y + radius * Math.cos(phi);
-    const z = focusTarget.z + radius * Math.sin(phi) * Math.cos(theta);
+    const f = getFocus();
 
-    camera.position.set(x, y, z);
-    camera.lookAt(focusTarget);
+    camera.position.set(
+      f.x + radius * Math.sin(phi) * Math.sin(theta),
+      f.y + radius * Math.cos(phi),
+      f.z + radius * Math.sin(phi) * Math.cos(theta)
+    );
+    camera.lookAt(f);
   }
 
   /* ================= RENDERER ================= */
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.physicallyCorrectLights = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
   /* ================= LIGHTING ================= */
-  const sunLight = new THREE.PointLight(0xffffff, 140, 0, 2);
+
+  // Sun light (primary)
+  const sunLight = new THREE.PointLight(0xffffff, 160, 0, 2);
   sunLight.position.set(0, 0, 0);
   scene.add(sunLight);
 
-  // Slightly stronger ambient (few % brighter)
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
+  // Space ambient (brighter than before)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
   scene.add(ambientLight);
+
+  // Hemisphere light (key for planet visibility)
+  const hemiLight = new THREE.HemisphereLight(
+    0xffffff,   // sky light
+    0x222222,   // ground
+    0.6
+  );
+  scene.add(hemiLight);
 
   /* ================= TEXTURES ================= */
   const loader = new THREE.TextureLoader();
@@ -83,43 +105,44 @@
   );
   scene.add(sun);
 
-  /* ================= PLANET DATA ================= */
+  /* ================= PLANETS ================= */
   const planetsData = [
-    { name:"Mercury",   size:0.4, dist:7,  speed:0.0009, tex:"mercury.jpg" },
-    { name:"Venus",     size:0.6, dist:9,  speed:0.0007, tex:"venus.jpg" },
-    { name:"Earth",     size:0.7, dist:11, speed:0.0006, tex:"earth.jpg" },
-    { name:"Mars",      size:0.5, dist:13, speed:0.0005, tex:"mars.jpg" },
-    { name:"Jupiter",   size:1.6, dist:17, speed:0.0003, tex:"jupiter.jpg" },
-    { name:"Saturn",    size:1.4, dist:21, speed:0.00025,tex:"saturn.jpg" },
-    { name:"Uranus",    size:1.2, dist:25, speed:0.0002, tex:"uranus.jpg" },
-    { name:"Neptune",   size:1.2, dist:29, speed:0.00015,tex:"neptune.jpg" },
-    { name:"Pluto",     size:0.4, dist:33, speed:0.0001, tex:"pluto.jpg" },
-    { name:"Exoplanet", size:0.9, dist:38, speed:0.00008,tex:"exoplanet.jpg"}
+    { size:0.4, dist:7,  speed:0.0009, tex:"mercury.jpg" },
+    { size:0.6, dist:9,  speed:0.0007, tex:"venus.jpg" },
+    { size:0.7, dist:11, speed:0.0006, tex:"earth.jpg" },
+    { size:0.5, dist:13, speed:0.0005, tex:"mars.jpg" },
+    { size:1.6, dist:17, speed:0.0003, tex:"jupiter.jpg" },
+    { size:1.4, dist:21, speed:0.00025,tex:"saturn.jpg" },
+    { size:1.2, dist:25, speed:0.0002, tex:"uranus.jpg" },
+    { size:1.2, dist:29, speed:0.00015,tex:"neptune.jpg" },
+    { size:0.4, dist:33, speed:0.0001, tex:"pluto.jpg" },
+    { size:0.9, dist:38, speed:0.00008,tex:"exoplanet.jpg"}
   ];
 
   const planets = [];
-  const clickablePlanets = [];
+  const clickable = [];
 
-  /* ================= CREATE PLANETS ================= */
   planetsData.forEach(p => {
     const pivot = new THREE.Object3D();
     pivot.rotation.y = Math.random() * Math.PI * 2;
     scene.add(pivot);
 
     const planet = new THREE.Mesh(
-      new THREE.SphereGeometry(p.size, 32, 32),
+      new THREE.SphereGeometry(p.size, 48, 48),
       new THREE.MeshStandardMaterial({
         map: loader.load("./assets/planets/" + p.tex),
-        roughness: 0.6,   // brighter surface
-        metalness: 0.03
+        roughness: 0.45,
+        metalness: 0.04,
+        emissive: new THREE.Color(0x222222),
+        emissiveIntensity: 0.45
       })
     );
 
     planet.position.x = p.dist;
     pivot.add(planet);
 
-    planets.push({ pivot, planet, speed: p.speed, size: p.size });
-    clickablePlanets.push(planet);
+    planets.push({ pivot, planet, speed: p.speed });
+    clickable.push(planet);
   });
 
   /* ================= CLICK TO FOCUS ================= */
@@ -131,14 +154,12 @@
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(clickablePlanets);
+    const hit = raycaster.intersectObjects(clickable);
 
-    if (intersects.length > 0) {
-      const planet = intersects[0].object;
-      planet.getWorldPosition(focusTarget);
-
-      // Zoom closer based on planet size
-      tRadius = Math.max(planet.geometry.parameters.radius * 6, 6);
+    if (hit.length) {
+      focusedObject = hit[0].object;
+      const r = focusedObject.geometry.parameters.radius;
+      tRadius = Math.max(r * 1.8, 1.2);
     }
   });
 
@@ -155,26 +176,26 @@
     if (!dragging) return;
     tTheta -= (e.clientX - lx) * 0.004;
     tPhi   -= (e.clientY - ly) * 0.004;
-    tPhi = Math.max(0.25, Math.min(Math.PI - 0.25, tPhi));
+    tPhi = Math.max(0.2, Math.min(Math.PI - 0.2, tPhi));
     lx = e.clientX; ly = e.clientY;
   });
 
   window.addEventListener("wheel", e => {
-    tRadius += e.deltaY * 0.06;
-    tRadius = Math.max(4, Math.min(200, tRadius));
+    tRadius += e.deltaY * 0.035;
+    tRadius = Math.max(0.6, Math.min(250, tRadius));
   });
 
-  /* ================= ANIMATE ================= */
+  /* ================= ANIMATION ================= */
   function animate() {
     requestAnimationFrame(animate);
 
     updateCamera();
 
-    sun.rotation.y += 0.0004;
+    sun.rotation.y += 0.00035;
 
     planets.forEach(p => {
       p.pivot.rotation.y += p.speed;
-      p.planet.rotation.y += 0.001;
+      p.planet.rotation.y += 0.0009;
     });
 
     renderer.render(scene, camera);
@@ -191,4 +212,3 @@
 
 </body>
 </html>
-
