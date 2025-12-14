@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – NASA Zoom FINAL</title>
+<title>Mini Universe – Planet Zoom Locked</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -46,24 +46,26 @@ document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 scene.add(new THREE.PointLight(0xffffff, 2.5, 8000));
 
-/* ================= CONTROLS (NO ZOOM) ================= */
+/* ================= CONTROLS (NO DEFAULT ZOOM) ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
-controls.enableZoom = false; // 🚫 DISABLED
+controls.enableZoom = false;
 controls.enableDamping = true;
 controls.dampingFactor = 0.15;
 controls.rotateSpeed = 0.3;
 
 /* ================= CUSTOM ZOOM SYSTEM ================= */
 let zoomTarget = camera.position.length();
-const ZOOM_MIN = 80;
-const ZOOM_MAX = 3000;
-const ZOOM_STEP = 120;       // scroll sensitivity
-const ZOOM_SMOOTH = 0.08;    // easing speed
+
+/* 🌌 GLOBAL (SOLAR SYSTEM) LIMITS */
+let ZOOM_MIN = 120;
+let ZOOM_MAX = 3200;
+
+const ZOOM_STEP = 120;
+const ZOOM_SMOOTH = 0.08;
 
 window.addEventListener("wheel", (e) => {
   e.preventDefault();
-
   zoomTarget += Math.sign(e.deltaY) * ZOOM_STEP;
   zoomTarget = THREE.MathUtils.clamp(zoomTarget, ZOOM_MIN, ZOOM_MAX);
 }, { passive:false });
@@ -100,17 +102,17 @@ scene.add(sun);
 
 /* ================= PLANETS ================= */
 const planetData = [
-  { size:4,  dist:70,  speed:1.8,  tex:"mercury.jpg" },
-  { size:6,  dist:95,  speed:1.5,  tex:"venus.jpg" },
-  { size:7,  dist:120, speed:1.2,  tex:"earth.jpg" },
-  { size:6,  dist:150, speed:1.0,  tex:"mars.jpg" },
-  { size:14, dist:200, speed:0.7,  tex:"jupiter.jpg" },
-  { size:13, dist:260, speed:0.45, tex:"saturn.jpg" },
-  { size:12, dist:320, speed:0.35, tex:"uranus.jpg" },
-  { size:12, dist:380, speed:0.28, tex:"neptune.jpg" },
-  { size:5,  dist:440, speed:0.22, tex:"pluto.jpg" },
-  { size:5,  dist:500, speed:0.18, tex:"eris.jpg" },
-  { size:8,  dist:560, speed:0.14, tex:"exoplanet.jpg" }
+  { name:"Mercury",   size:4,  dist:70,  speed:1.8,  tex:"mercury.jpg" },
+  { name:"Venus",     size:6,  dist:95,  speed:1.5,  tex:"venus.jpg" },
+  { name:"Earth",     size:7,  dist:120, speed:1.2,  tex:"earth.jpg" },
+  { name:"Mars",      size:6,  dist:150, speed:1.0,  tex:"mars.jpg" },
+  { name:"Jupiter",   size:14, dist:200, speed:0.7,  tex:"jupiter.jpg" },
+  { name:"Saturn",    size:13, dist:260, speed:0.45, tex:"saturn.jpg" },
+  { name:"Uranus",    size:12, dist:320, speed:0.35, tex:"uranus.jpg" },
+  { name:"Neptune",   size:12, dist:380, speed:0.28, tex:"neptune.jpg" },
+  { name:"Pluto",     size:5,  dist:440, speed:0.22, tex:"pluto.jpg" },
+  { name:"Eris",      size:5,  dist:500, speed:0.18, tex:"eris.jpg" },
+  { name:"Exoplanet", size:8,  dist:560, speed:0.14, tex:"exoplanet.jpg" }
 ];
 
 const planets = [];
@@ -126,15 +128,13 @@ planetData.forEach(p=>{
   scene.add(mesh);
 
   planets.push({
+    ...p,
     mesh,
-    angle: Math.random()*Math.PI*2,
-    dist: p.dist,
-    speed: p.speed,
-    size: p.size
+    angle: Math.random()*Math.PI*2
   });
 });
 
-/* ================= CLICK LOCK ================= */
+/* ================= CLICK → PLANET ZOOM LOCK ================= */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selected = null;
@@ -148,10 +148,19 @@ window.addEventListener("click", e=>{
 
   if(hits.length){
     selected = planets.find(p=>p.mesh===hits[0].object);
+
+    /* 🔒 PLANET-SPECIFIC ZOOM LIMITS */
+    ZOOM_MIN = selected.size * 4;     // max zoom-in
+    ZOOM_MAX = selected.dist * 3.2;   // max zoom-out
+
     zoomTarget = selected.dist * 2;
-  }else{
+  } else {
     selected = null;
     controls.target.set(0,0,0);
+
+    /* 🌌 BACK TO SOLAR SYSTEM LIMITS */
+    ZOOM_MIN = 120;
+    ZOOM_MAX = 3200;
     zoomTarget = camera.position.length();
   }
 });
@@ -196,4 +205,3 @@ animate();
 
 </body>
 </html>
-
