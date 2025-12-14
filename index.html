@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <title>Mini Universe</title>
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  background: black;
-}
+body { margin:0; overflow:hidden; background:black; }
 </style>
 </head>
 <body>
@@ -16,252 +12,233 @@ body {
 <script type="module">
 import * as THREE from "./three/three.module.min.js";
 
-/* ================= SCENE ================= */
+/* ================= SCENE & CAMERA ================= */
 const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 12000);
 
-/* ================= CAMERA ================= */
-const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 12000);
-let theta = Math.PI / 4, phi = Math.PI / 3;
-let radius = 110, tTheta = theta, tPhi = phi, tRadius = radius;
-let focusedObject = null;
+let theta=Math.PI/4, phi=Math.PI/3;
+let radius=120, tTheta=theta, tPhi=phi, tRadius=radius;
+let focus=null;
 
-function getFocus() {
-  if (focusedObject) {
-    const v = new THREE.Vector3();
-    focusedObject.getWorldPosition(v);
+function getFocus(){
+  if(focus){
+    const v=new THREE.Vector3();
+    focus.getWorldPosition(v);
     return v;
   }
   return new THREE.Vector3();
 }
 
-function updateCamera() {
-  theta += (tTheta - theta) * 0.08;
-  phi += (tPhi - phi) * 0.08;
-  radius += (tRadius - radius) * 0.14;
-  const f = getFocus();
+function updateCamera(){
+  theta+=(tTheta-theta)*0.08;
+  phi+=(tPhi-phi)*0.08;
+  radius+=(tRadius-radius)*0.15;
+  const f=getFocus();
   camera.position.set(
-    f.x + radius * Math.sin(phi) * Math.sin(theta),
-    f.y + radius * Math.cos(phi),
-    f.z + radius * Math.sin(phi) * Math.cos(theta)
+    f.x + radius*Math.sin(phi)*Math.sin(theta),
+    f.y + radius*Math.cos(phi),
+    f.z + radius*Math.sin(phi)*Math.cos(theta)
   );
   camera.lookAt(f);
 }
 
 /* ================= RENDERER ================= */
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.physicallyCorrectLights = true;
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHTS ================= */
-scene.add(new THREE.PointLight(0xffffff, 170, 0, 2));
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+scene.add(new THREE.PointLight(0xffffff,180,0,2));
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
 /* ================= STARFIELD ================= */
-const starGeo = new THREE.BufferGeometry();
-const starPos = [];
-for (let i = 0; i < 8000; i++) {
+const starsGeo=new THREE.BufferGeometry();
+const starPos=[];
+for(let i=0;i<9000;i++){
   starPos.push(
-    (Math.random() - 0.5) * 8000,
-    (Math.random() - 0.5) * 8000,
-    (Math.random() - 0.5) * 8000
+    (Math.random()-0.5)*9000,
+    (Math.random()-0.5)*9000,
+    (Math.random()-0.5)*9000
   );
 }
-starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+starsGeo.setAttribute("position",new THREE.Float32BufferAttribute(starPos,3));
 scene.add(new THREE.Points(
-  starGeo,
-  new THREE.PointsMaterial({ size: 1.6, color: 0xffffff })
+  starsGeo,
+  new THREE.PointsMaterial({size:1.4,color:0xffffff})
 ));
 
 /* ================= TEXTURES ================= */
-const loader = new THREE.TextureLoader();
+const loader=new THREE.TextureLoader();
 
 /* ================= SUN ================= */
-const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(8, 64, 64),
-  new THREE.MeshBasicMaterial({ map: loader.load("./assets/planets/sun.jpg") })
+const sun=new THREE.Mesh(
+  new THREE.SphereGeometry(8,64,64),
+  new THREE.MeshBasicMaterial({map:loader.load("./assets/planets/sun.jpg")})
 );
 scene.add(sun);
 
 /* ================= PLANETS ================= */
-const planetData = [
-  { size:1.2, dist:18, speed:0.0009, tex:"mercury.jpg" },
-  { size:1.6, dist:24, speed:0.0007, tex:"venus.jpg" },
-  { size:1.8, dist:30, speed:0.0006, tex:"earth.jpg", moons:1, dust:true },
-  { size:1.5, dist:36, speed:0.0005, tex:"mars.jpg" },
-  { size:3.2, dist:46, speed:0.0003, tex:"jupiter.jpg", moons:3, dust:true },
-  { size:2.9, dist:58, speed:0.00025, tex:"saturn.jpg", moons:2, dust:true },
-  { size:2.5, dist:70, speed:0.0002, tex:"uranus.jpg" },
-  { size:2.5, dist:82, speed:0.00015, tex:"neptune.jpg" },
-  { size:1.2, dist:94, speed:0.0001, tex:"pluto.jpg" },
-  { size:2.0, dist:108, speed:0.00008, tex:"exoplanet.jpg", moons:1 }
+const planetData=[
+ {size:1.2,dist:18,speed:0.0009,tex:"mercury.jpg"},
+ {size:1.6,dist:24,speed:0.0007,tex:"venus.jpg"},
+ {size:1.8,dist:30,speed:0.0006,tex:"earth.jpg",moons:1},
+ {size:1.5,dist:36,speed:0.0005,tex:"mars.jpg"},
+ {size:3.2,dist:48,speed:0.0003,tex:"jupiter.jpg",moons:3},
+ {size:2.9,dist:62,speed:0.00025,tex:"saturn.jpg",moons:2},
+ {size:2.5,dist:76,speed:0.0002,tex:"uranus.jpg"},
+ {size:2.5,dist:90,speed:0.00015,tex:"neptune.jpg"},
+ {size:1.2,dist:104,speed:0.0001,tex:"pluto.jpg"},
+ {size:2.0,dist:120,speed:0.00008,tex:"exoplanet.jpg",moons:1}
 ];
 
-const planets = [];
-const clickable = [];
+const planets=[], clickable=[];
 
-/* ================= CREATE PLANETS ================= */
-planetData.forEach(p => {
-
-  /* ORBIT RING – SUBTLE */
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(p.dist - 0.04, p.dist + 0.04, 128),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      opacity: 0.07,   // 🔑 very subtle
-      transparent: true,
-      side: THREE.DoubleSide
-    })
+planetData.forEach(p=>{
+  /* orbit ring */
+  const ring=new THREE.Mesh(
+    new THREE.RingGeometry(p.dist-0.04,p.dist+0.04,128),
+    new THREE.MeshBasicMaterial({color:0xffffff,opacity:0.07,transparent:true})
   );
-  ring.rotation.x = Math.PI / 2;
+  ring.rotation.x=Math.PI/2;
   scene.add(ring);
 
-  const pivot = new THREE.Object3D();
-  pivot.rotation.y = Math.random() * Math.PI * 2;
+  const pivot=new THREE.Object3D();
+  pivot.rotation.y=Math.random()*Math.PI*2;
   scene.add(pivot);
 
-  const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(p.size, 48, 48),
+  const planet=new THREE.Mesh(
+    new THREE.SphereGeometry(p.size,48,48),
     new THREE.MeshStandardMaterial({
-      map: loader.load("./assets/planets/" + p.tex),
-      emissive: 0x333333,
-      emissiveIntensity: 0.5
+      map:loader.load("./assets/planets/"+p.tex),
+      emissive:0x333333,
+      emissiveIntensity:0.5
     })
   );
-  planet.position.x = p.dist;
+  planet.position.x=p.dist;
   pivot.add(planet);
 
-  /* PLANET DUST */
-  if (p.dust) {
-    const dustGeo = new THREE.BufferGeometry();
-    const dust = [];
-    for (let i = 0; i < 300; i++) {
-      dust.push(
-        (Math.random() - 0.5) * p.size * 6,
-        (Math.random() - 0.5) * p.size * 6,
-        (Math.random() - 0.5) * p.size * 6
-      );
-    }
-    dustGeo.setAttribute("position", new THREE.Float32BufferAttribute(dust, 3));
-    const dustPoints = new THREE.Points(
-      dustGeo,
-      new THREE.PointsMaterial({
-        size: 0.5,
-        color: 0xaaaaaa,
-        transparent: true,
-        opacity: 0.5
-      })
-    );
-    planet.add(dustPoints);
-  }
-
-  /* MOONS */
-  const moonPivots = [];
-  if (p.moons) {
-    for (let i = 0; i < p.moons; i++) {
-      const mp = new THREE.Object3D();
+  /* moons – VERY CLOSE */
+  const moonPivots=[];
+  if(p.moons){
+    for(let i=0;i<p.moons;i++){
+      const mp=new THREE.Object3D();
       planet.add(mp);
-      const moon = new THREE.Mesh(
-        new THREE.SphereGeometry(p.size * 0.22, 24, 24),
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
+
+      const moon=new THREE.Mesh(
+        new THREE.SphereGeometry(p.size*0.18,24,24),
+        new THREE.MeshStandardMaterial({color:0xffffff})
       );
-      moon.position.x = p.size * (3 + i * 1.3);
+      moon.position.x=p.size*(2.2+i*0.9); // 🔑 SAFE DISTANCE
       mp.add(moon);
       moonPivots.push(mp);
     }
   }
 
-  planets.push({ pivot, planet, moons: moonPivots, speed: p.speed });
+  planets.push({pivot,planet,moons:moonPivots,speed:p.speed});
   clickable.push(planet);
 });
 
 /* ================= SHOOTING STARS ================= */
-const meteors = [];
-function spawnMeteor(fast = false) {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(fast ? 0.18 : 0.25, 8, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
+const streaks=[];
+
+function spawnShootingStar(){
+  const geo=new THREE.CylinderGeometry(0.03,0.03,8,8);
+  const mat=new THREE.MeshBasicMaterial({color:0xffffff});
+  const s=new THREE.Mesh(geo,mat);
+  s.rotation.z=Math.PI/2;
+  s.position.set(
+    (Math.random()-0.5)*600,
+    300,
+    (Math.random()-0.5)*600
+  );
+  s.userData.vel=new THREE.Vector3(6,-6,-4);
+  scene.add(s);
+  streaks.push(s);
+}
+setInterval(spawnShootingStar,4000);
+
+/* ================= METEORS ================= */
+function spawnMeteor(){
+  const m=new THREE.Mesh(
+    new THREE.SphereGeometry(0.25,8,8),
+    new THREE.MeshBasicMaterial({color:0xffccaa})
   );
   m.position.set(
-    (Math.random() - 0.5) * 1200,
-    600,
-    (Math.random() - 0.5) * 1200
+    (Math.random()-0.5)*800,
+    (Math.random()*300)+200,
+    (Math.random()-0.5)*800
   );
-  m.userData.vel = new THREE.Vector3(
-    fast ? 10 : 3,
-    - (fast ? 6 : 2),
-    fast ? -8 : -2
+  m.userData.vel=new THREE.Vector3(
+    (Math.random()-0.5)*1.5,
+    -(0.6+Math.random()),
+    (Math.random()-0.5)*1.5
   );
   scene.add(m);
-  meteors.push(m);
+  streaks.push(m);
 }
-
-/* spawn patterns */
-setInterval(() => spawnMeteor(true), 6000);   // shooting stars
-setInterval(() => spawnMeteor(false), 9000);  // slow meteors
+setInterval(spawnMeteor,7000);
 
 /* ================= INTERACTION ================= */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-addEventListener("click", e => {
-  mouse.x = (e.clientX / innerWidth) * 2 - 1;
-  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const hit = raycaster.intersectObjects(clickable);
-  if (hit.length) {
-    focusedObject = hit[0].object;
-    tRadius = hit[0].object.geometry.parameters.radius * 2;
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+addEventListener("click",e=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hit=raycaster.intersectObjects(clickable);
+  if(hit.length){
+    focus=hit[0].object;
+    tRadius=hit[0].object.geometry.parameters.radius*2;
   }
 });
 
 /* ================= CONTROLS ================= */
-let drag = false, lx = 0, ly = 0;
-addEventListener("mousedown", e => { drag = true; lx = e.clientX; ly = e.clientY; });
-addEventListener("mouseup", () => drag = false);
-addEventListener("mousemove", e => {
-  if (!drag) return;
-  tTheta -= (e.clientX - lx) * 0.004;
-  tPhi -= (e.clientY - ly) * 0.004;
-  tPhi = Math.max(0.3, Math.min(Math.PI - 0.3, tPhi));
-  lx = e.clientX; ly = e.clientY;
+let drag=false,lx=0,ly=0;
+addEventListener("mousedown",e=>{drag=true;lx=e.clientX;ly=e.clientY});
+addEventListener("mouseup",()=>drag=false);
+addEventListener("mousemove",e=>{
+  if(!drag)return;
+  tTheta-=(e.clientX-lx)*0.004;
+  tPhi-=(e.clientY-ly)*0.004;
+  tPhi=Math.max(0.3,Math.min(Math.PI-0.3,tPhi));
+  lx=e.clientX;ly=e.clientY;
 });
-addEventListener("wheel", e => {
-  tRadius += e.deltaY * 0.07;
-  tRadius = Math.max(1, Math.min(1500, tRadius));
+addEventListener("wheel",e=>{
+  tRadius+=e.deltaY*0.08;
+  tRadius=Math.max(1,Math.min(2000,tRadius));
 });
 
 /* ================= ANIMATE ================= */
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
-
   updateCamera();
-  sun.rotation.y += 0.00025;
+  sun.rotation.y+=0.00025;
 
-  planets.forEach(p => {
-    p.pivot.rotation.y += p.speed;
-    p.planet.rotation.y += 0.0007;
-    p.moons.forEach((m,i)=> m.rotation.y += 0.001 + i * 0.0006);
+  planets.forEach(p=>{
+    p.pivot.rotation.y+=p.speed;
+    p.planet.rotation.y+=0.0007;
+    p.moons.forEach((m,i)=>m.rotation.y+=0.001+i*0.0005);
   });
 
-  meteors.forEach((m,i) => {
-    m.position.add(m.userData.vel);
-    if (m.position.length() > 2000) {
-      scene.remove(m);
-      meteors.splice(i,1);
+  streaks.forEach((s,i)=>{
+    s.position.add(s.userData.vel);
+    if(s.position.length()>2000){
+      scene.remove(s);
+      streaks.splice(i,1);
     }
   });
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 
 /* ================= RESIZE ================= */
-addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight;
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
 </script>
 
