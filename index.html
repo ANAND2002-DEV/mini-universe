@@ -31,34 +31,38 @@
     5000
   );
 
-  /* Camera orbit variables (old-project style) */
-  let isDragging = false;
-  let lastX = 0;
-  let lastY = 0;
+  // Camera spherical values
+  let theta = Math.PI / 4;
+  let phi = Math.PI / 3;
+  let radius = 40;
 
-  let theta = Math.PI / 4;   // horizontal angle
-  let phi   = Math.PI / 3;   // vertical angle
-  let radius = 35;           // distance from sun
+  // Target values (for smooth inertia)
+  let targetTheta = theta;
+  let targetPhi = phi;
+  let targetRadius = radius;
 
-  function updateCamera() {
+  function updateCameraSmooth() {
+    theta += (targetTheta - theta) * 0.08;
+    phi   += (targetPhi - phi) * 0.08;
+    radius += (targetRadius - radius) * 0.1;
+
     const x = radius * Math.sin(phi) * Math.sin(theta);
     const y = radius * Math.cos(phi);
     const z = radius * Math.sin(phi) * Math.cos(theta);
+
     camera.position.set(x, y, z);
     camera.lookAt(0, 0, 0);
   }
-
-  updateCamera();
 
   /* ================= RENDERER ================= */
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ================= LIGHTING ================= */
-  const sunlight = new THREE.PointLight(0xffffff, 4);
-  sunlight.position.set(0, 0, 0);
-  scene.add(sunlight);
+  /* ================= LIGHTS ================= */
+  const sunLight = new THREE.PointLight(0xffffff, 4);
+  sunLight.position.set(0, 0, 0);
+  scene.add(sunLight);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
@@ -75,18 +79,18 @@
   );
   scene.add(sun);
 
-  /* ================= PLANETS ================= */
+  /* ================= PLANETS (SLOW SPEEDS) ================= */
   const planetsData = [
-    { size: 0.4, distance: 6,  speed: 0.040, texture: "mercury.jpg" },
-    { size: 0.6, distance: 8,  speed: 0.032, texture: "venus.jpg" },
-    { size: 0.7, distance: 10, speed: 0.026, texture: "earth.jpg" },
-    { size: 0.5, distance: 12, speed: 0.022, texture: "mars.jpg" },
-    { size: 1.6, distance: 16, speed: 0.016, texture: "jupiter.jpg" },
-    { size: 1.4, distance: 20, speed: 0.013, texture: "saturn.jpg" },
-    { size: 1.2, distance: 24, speed: 0.010, texture: "uranus.jpg" },
-    { size: 1.2, distance: 28, speed: 0.008, texture: "neptune.jpg" },
-    { size: 0.4, distance: 32, speed: 0.006, texture: "pluto.jpg" },
-    { size: 0.9, distance: 36, speed: 0.004, texture: "exoplanet.jpg" }
+    { size: 0.4, distance: 6,  speed: 0.004, texture: "mercury.jpg" },
+    { size: 0.6, distance: 8,  speed: 0.0032, texture: "venus.jpg" },
+    { size: 0.7, distance: 10, speed: 0.0026, texture: "earth.jpg" },
+    { size: 0.5, distance: 12, speed: 0.0022, texture: "mars.jpg" },
+    { size: 1.6, distance: 16, speed: 0.0016, texture: "jupiter.jpg" },
+    { size: 1.4, distance: 20, speed: 0.0013, texture: "saturn.jpg" },
+    { size: 1.2, distance: 24, speed: 0.0010, texture: "uranus.jpg" },
+    { size: 1.2, distance: 28, speed: 0.0008, texture: "neptune.jpg" },
+    { size: 0.4, distance: 32, speed: 0.0006, texture: "pluto.jpg" },
+    { size: 0.9, distance: 36, speed: 0.0004, texture: "exoplanet.jpg" }
   ];
 
   const planets = [];
@@ -111,48 +115,54 @@
   });
 
   /* ================= MOUSE CONTROLS ================= */
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
   window.addEventListener("mousedown", e => {
-    isDragging = true;
+    dragging = true;
     lastX = e.clientX;
     lastY = e.clientY;
   });
 
   window.addEventListener("mouseup", () => {
-    isDragging = false;
+    dragging = false;
   });
 
   window.addEventListener("mousemove", e => {
-    if (!isDragging) return;
+    if (!dragging) return;
 
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
 
-    theta -= dx * 0.005;
-    phi   -= dy * 0.005;
+    targetTheta -= dx * 0.004;
+    targetPhi   -= dy * 0.004;
 
-    phi = Math.max(0.2, Math.min(Math.PI - 0.2, phi));
-
-    updateCamera();
+    targetPhi = Math.max(0.25, Math.min(Math.PI - 0.25, targetPhi));
 
     lastX = e.clientX;
     lastY = e.clientY;
   });
 
   window.addEventListener("wheel", e => {
-    radius += e.deltaY * 0.05;
-    radius = Math.max(10, Math.min(120, radius));
-    updateCamera();
+    targetRadius += e.deltaY * 0.05;
+    targetRadius = Math.max(15, Math.min(150, targetRadius));
   });
 
   /* ================= ANIMATION ================= */
   function animate() {
     requestAnimationFrame(animate);
 
-    sun.rotation.y += 0.003;
+    // Smooth camera
+    updateCameraSmooth();
 
+    // Sun rotation (slow)
+    sun.rotation.y += 0.0015;
+
+    // Planet orbits (slow & calm)
     planets.forEach(p => {
       p.orbit.rotation.y += p.speed;
-      p.planet.rotation.y += 0.01;
+      p.planet.rotation.y += 0.004;
     });
 
     renderer.render(scene, camera);
