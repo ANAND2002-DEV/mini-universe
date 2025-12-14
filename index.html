@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Faster Orbits</title>
+<title>Mini Universe – Real Space Effects</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -28,189 +28,173 @@ import { OrbitControls } from
 const scene = new THREE.Scene();
 
 /* ================= CAMERA ================= */
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  1,
-  20000
-);
-camera.position.set(0, 180, 360);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 1, 30000);
+camera.position.set(0,180,360);
 
 /* ================= RENDERER ================= */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHT ================= */
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-scene.add(new THREE.PointLight(0xffffff, 2.5, 12000));
+scene.add(new THREE.AmbientLight(0xffffff,0.4));
+scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
 /* ================= CONTROLS (MAIN BASE) ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enablePan = false;
-controls.enableZoom = false;
-controls.enableDamping = true;
-controls.dampingFactor = 0.15;
-controls.rotateSpeed = 0.35;
+controls.enablePan=false;
+controls.enableZoom=false;
+controls.enableDamping=true;
+controls.dampingFactor=0.15;
 
-/* ================= DRAG TRACK ================= */
-let isDragging = false;
+/* ================= DRAG ================= */
+let isDragging=false;
 renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
 renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ================= CUSTOM ZOOM ================= */
-let zoomTarget = camera.position.length();
-let ZOOM_MIN = 120;
-let ZOOM_MAX = 3200;
-const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
-
+let zoomTarget=camera.position.length();
+let ZOOM_MIN=120, ZOOM_MAX=3200;
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  zoomTarget += Math.sign(e.deltaY)*ZOOM_STEP;
-  zoomTarget = THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
+  zoomTarget+=Math.sign(e.deltaY)*120;
+  zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
 },{passive:false});
 
-/* ================= STARS ================= */
-const starsGeo = new THREE.BufferGeometry();
-const starsPos = [];
-for(let i=0;i<10000;i++){
-  starsPos.push(
-    (Math.random()-0.5)*16000,
-    (Math.random()-0.5)*16000,
-    (Math.random()-0.5)*16000
-  );
-}
-starsGeo.setAttribute("position",new THREE.Float32BufferAttribute(starsPos,3));
-scene.add(new THREE.Points(
-  starsGeo,
-  new THREE.PointsMaterial({ color:0xffffff, size:1 })
-));
-
 /* ================= TEXTURES ================= */
-const loader = new THREE.TextureLoader();
+const loader=new THREE.TextureLoader();
 
-/* ================= VISUAL SCALE ================= */
-const PLANET_SCALE = 2.2;
-const SUN_SCALE = 0.85;
+/* ================= SCALE ================= */
+const PLANET_SCALE=2.2;
+const SUN_SCALE=0.85;
 
 /* ================= SUN ================= */
-const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(42 * SUN_SCALE,64,64),
+const sun=new THREE.Mesh(
+  new THREE.SphereGeometry(42*SUN_SCALE,64,64),
   new THREE.MeshStandardMaterial({
-    map: loader.load("./assets/planets/sun.jpg"),
+    map:loader.load("./assets/planets/sun.jpg"),
     emissive:new THREE.Color(0xffaa00),
     emissiveIntensity:2
   })
 );
 scene.add(sun);
 
-/* ================= PLANET DATA ================= */
-const planetData = [
-  { name:"Mercury", size:4,  dist:70,  speed:1.8,  tex:"mercury.jpg" },
-  { name:"Venus",   size:6,  dist:95,  speed:1.5,  tex:"venus.jpg" },
-  { name:"Earth",   size:7,  dist:120, speed:1.2,  tex:"earth.jpg" },
-  { name:"Mars",    size:6,  dist:150, speed:1.0,  tex:"mars.jpg" },
-  { name:"Jupiter", size:14, dist:200, speed:0.7,  tex:"jupiter.jpg" },
-  { name:"Saturn",  size:13, dist:260, speed:0.45, tex:"saturn.jpg" },
-  { name:"Uranus",  size:12, dist:320, speed:0.35, tex:"uranus.jpg" },
-  { name:"Neptune", size:12, dist:380, speed:0.28, tex:"neptune.jpg" },
-  { name:"Pluto",   size:5,  dist:440, speed:0.22, tex:"pluto.jpg" },
-  { name:"Eris",    size:5,  dist:500, speed:0.18, tex:"eris.jpg" },
-  { name:"Exoplanet",size:8, dist:560, speed:0.14, tex:"exoplanet.jpg" }
+/* ================= PLANETS ================= */
+const planetData=[
+  {size:4,dist:70,speed:1.8,tex:"mercury.jpg"},
+  {size:6,dist:95,speed:1.5,tex:"venus.jpg"},
+  {size:7,dist:120,speed:1.2,tex:"earth.jpg"},
+  {size:6,dist:150,speed:1.0,tex:"mars.jpg"},
+  {size:14,dist:200,speed:0.7,tex:"jupiter.jpg"},
+  {size:13,dist:260,speed:0.45,tex:"saturn.jpg"},
+  {size:12,dist:320,speed:0.35,tex:"uranus.jpg"},
+  {size:12,dist:380,speed:0.28,tex:"neptune.jpg"},
+  {size:5,dist:440,speed:0.22,tex:"pluto.jpg"},
+  {size:5,dist:500,speed:0.18,tex:"eris.jpg"},
+  {size:8,dist:560,speed:0.14,tex:"exoplanet.jpg"}
 ];
 
-const planets = [];
+const planets=[];
+const ORBIT_SPEED=0.00035;
 
-/* 🔥 MUCH FASTER ORBIT SPEED */
-const ORBIT_SPEED = 0.00035;   // ~3.5× faster
-
-/* ================= ORBIT LINES ================= */
-planetData.forEach(p=>{
-  const curve = new THREE.EllipseCurve(0,0,p.dist,p.dist,0,Math.PI*2);
-  const points = curve.getPoints(160);
-  const geo = new THREE.BufferGeometry().setFromPoints(
-    points.map(pt=>new THREE.Vector3(pt.x,0,pt.y))
-  );
-  scene.add(new THREE.Line(
-    geo,
-    new THREE.LineBasicMaterial({ color:0xffffff, opacity:0.18, transparent:true })
-  ));
-});
-
-/* ================= CREATE PLANETS ================= */
 planetData.forEach(p=>{
   const mesh=new THREE.Mesh(
-    new THREE.SphereGeometry(p.size * PLANET_SCALE,48,48),
-    new THREE.MeshStandardMaterial({
-      map:loader.load("./assets/planets/"+p.tex)
-    })
+    new THREE.SphereGeometry(p.size*PLANET_SCALE,48,48),
+    new THREE.MeshStandardMaterial({ map:loader.load("./assets/planets/"+p.tex) })
   );
   scene.add(mesh);
   planets.push({...p,mesh,angle:Math.random()*Math.PI*2});
 });
 
-/* ================= SELECTION ================= */
-const raycaster=new THREE.Raycaster();
-const mouse=new THREE.Vector2();
-let selected=null;
+/* ================= COSMIC DUST ================= */
+const dustGeo=new THREE.BufferGeometry();
+const dust=[];
+for(let i=0;i<6000;i++){
+  dust.push(
+    THREE.MathUtils.randFloatSpread(1000),
+    THREE.MathUtils.randFloatSpread(30),
+    THREE.MathUtils.randFloatSpread(1000)
+  );
+}
+dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
+const dustPoints=new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({ color:0xffffff, size:0.6, opacity:0.35, transparent:true })
+);
+scene.add(dustPoints);
 
-window.addEventListener("click",(e)=>{
-  if(isDragging) return;
+/* ================= COMETS ================= */
+const comets=[];
+function spawnComet(){
+  const comet=new THREE.Mesh(
+    new THREE.SphereGeometry(2,16,16),
+    new THREE.MeshBasicMaterial({ color:0xffffff })
+  );
+  comet.angle=Math.random()*Math.PI*2;
+  comet.dist=THREE.MathUtils.randFloat(200,800);
+  comet.speed=THREE.MathUtils.randFloat(0.004,0.008);
+  scene.add(comet);
+  comets.push(comet);
+}
+setInterval(spawnComet,8000);
 
-  mouse.x=(e.clientX/window.innerWidth)*2-1;
-  mouse.y=-(e.clientY/window.innerHeight)*2+1;
-  raycaster.setFromCamera(mouse,camera);
-
-  const hits=raycaster.intersectObjects(planets.map(p=>p.mesh));
-  if(hits.length){
-    selected=planets.find(p=>p.mesh===hits[0].object);
-    ZOOM_MIN=selected.size*PLANET_SCALE*3;
-    ZOOM_MAX=selected.dist*3;
-    zoomTarget=selected.dist*2;
-  }else{
-    selected=null;
-    controls.target.set(0,0,0);
-    ZOOM_MIN=120;
-    ZOOM_MAX=3200;
-  }
-});
-
-/* ================= RESIZE ================= */
-window.addEventListener("resize",()=>{
-  camera.aspect=window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
-});
+/* ================= SHOOTING STARS ================= */
+const shootingStars=[];
+function spawnShootingStar(){
+  const geo=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0,0,0),
+    new THREE.Vector3(0,0,-200)
+  ]);
+  const star=new THREE.Line(
+    geo,
+    new THREE.LineBasicMaterial({ color:0xffffff })
+  );
+  star.position.set(
+    THREE.MathUtils.randFloat(-1200,1200),
+    THREE.MathUtils.randFloat(200,600),
+    THREE.MathUtils.randFloat(-1200,1200)
+  );
+  scene.add(star);
+  shootingStars.push({star,life:40});
+}
+setInterval(spawnShootingStar,3000);
 
 /* ================= LOOP ================= */
 function animate(){
   requestAnimationFrame(animate);
 
   planets.forEach(p=>{
-    p.angle += ORBIT_SPEED * p.speed;
-    p.mesh.position.set(
-      Math.cos(p.angle)*p.dist,
-      0,
-      Math.sin(p.angle)*p.dist
-    );
+    p.angle+=ORBIT_SPEED*p.speed;
+    p.mesh.position.set(Math.cos(p.angle)*p.dist,0,Math.sin(p.angle)*p.dist);
   });
 
-  if(selected) controls.target.copy(selected.mesh.position);
+  comets.forEach(c=>{
+    c.angle+=c.speed;
+    c.position.set(Math.cos(c.angle)*c.dist,0,Math.sin(c.angle)*c.dist);
+  });
 
-  const dir=camera.position.clone().sub(controls.target).normalize();
-  const dist=camera.position.distanceTo(controls.target);
-  camera.position.copy(
-    controls.target.clone().add(
-      dir.multiplyScalar(THREE.MathUtils.lerp(dist,zoomTarget,ZOOM_SMOOTH))
-    )
-  );
+  shootingStars.forEach((s,i)=>{
+    s.star.position.z-=25;
+    if(--s.life<=0){
+      scene.remove(s.star);
+      shootingStars.splice(i,1);
+    }
+  });
+
+  const dir=camera.position.clone().normalize();
+  camera.position.lerp(dir.multiplyScalar(zoomTarget),0.08);
 
   controls.update();
   renderer.render(scene,camera);
 }
 animate();
+
+window.addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 
 </body>
