@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe</title>
+<title>Mini Universe – Realistic Orbits</title>
 <style>
   body { margin:0; overflow:hidden; background:black; }
   canvas { display:block; }
@@ -31,100 +31,108 @@ import { OrbitControls } from './three/OrbitControls.js';
 const scene = new THREE.Scene();
 
 /* ---------- CAMERA ---------- */
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  5000
-);
-camera.position.set(0, 120, 260);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 6000);
+camera.position.set(0, 140, 300);
 
 /* ---------- RENDERER ---------- */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 /* ---------- CONTROLS ---------- */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.minDistance = 30;
-controls.maxDistance = 900;
+controls.dampingFactor = 0.06;
+controls.minDistance = 40;
+controls.maxDistance = 1200;
 
-/* ---------- LIGHTS ---------- */
-scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-
-const sunLight = new THREE.PointLight(0xffffff, 3, 3000);
-sunLight.position.set(0,0,0);
+/* ---------- LIGHT ---------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const sunLight = new THREE.PointLight(0xffffff, 3.5, 3000);
 scene.add(sunLight);
 
-/* ---------- STAR BACKGROUND ---------- */
-const stars = new THREE.BufferGeometry();
-const starCount = 8000;
+/* ---------- STARS ---------- */
+const starGeo = new THREE.BufferGeometry();
+const starCount = 9000;
 const starPos = [];
-
-for (let i = 0; i < starCount; i++) {
+for (let i=0;i<starCount;i++){
   starPos.push(
-    (Math.random() - 0.5) * 3000,
-    (Math.random() - 0.5) * 3000,
-    (Math.random() - 0.5) * 3000
+    (Math.random()-0.5)*3500,
+    (Math.random()-0.5)*3500,
+    (Math.random()-0.5)*3500
   );
 }
-stars.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
 scene.add(new THREE.Points(
-  stars,
-  new THREE.PointsMaterial({ color:0xffffff, size:1 })
+  starGeo,
+  new THREE.PointsMaterial({color:0xffffff, size:1})
 ));
 
-/* ---------- TEXTURE LOADER ---------- */
+/* ---------- TEXTURES ---------- */
 const loader = new THREE.TextureLoader();
 
 /* ---------- SUN ---------- */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(18, 64, 64),
-  new THREE.MeshBasicMaterial({
-    map: loader.load('./assets/planets/sun.jpg')
-  })
+  new THREE.SphereGeometry(20,64,64),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/planets/sun.jpg') })
 );
 scene.add(sun);
 
-/* ---------- PLANETS DATA ---------- */
-const planetsData = [
-  { name:'Mercury', file:'mercury.jpg', r:3, d:30, speed:0.04 },
-  { name:'Venus', file:'venus.jpg', r:4, d:45, speed:0.03 },
-  { name:'Earth', file:'earth.jpg', r:4.5, d:65, speed:0.025 },
-  { name:'Mars', file:'mars.jpg', r:3.5, d:85, speed:0.02 },
-  { name:'Jupiter', file:'jupiter.jpg', r:9, d:120, speed:0.015 },
-  { name:'Saturn', file:'saturn.jpg', r:8, d:160, speed:0.012 },
-  { name:'Uranus', file:'uranus.jpg', r:6, d:200, speed:0.01 },
-  { name:'Neptune', file:'neptune.jpg', r:6, d:240, speed:0.008 },
-  { name:'Pluto', file:'pluto.jpg', r:2.5, d:280, speed:0.006 },
-  { name:'Exoplanet', file:'exoplanet.jpg', r:5, d:330, speed:0.004 }
+/* ---------- PLANET DATA ---------- */
+const planetData = [
+  { name:'Mercury', tex:'mercury.jpg', r:3, d:40, speed:0.045, moons:0 },
+  { name:'Venus', tex:'venus.jpg', r:4, d:55, speed:0.035, moons:0 },
+  { name:'Earth', tex:'earth.jpg', r:4.5, d:75, speed:0.03, moons:1 },
+  { name:'Mars', tex:'mars.jpg', r:3.8, d:95, speed:0.026, moons:2 },
+  { name:'Jupiter', tex:'jupiter.jpg', r:9, d:135, speed:0.018, moons:4 },
+  { name:'Saturn', tex:'saturn.jpg', r:8, d:175, speed:0.014, moons:3 },
+  { name:'Uranus', tex:'uranus.jpg', r:6, d:215, speed:0.01, moons:2 },
+  { name:'Neptune', tex:'neptune.jpg', r:6, d:255, speed:0.008, moons:2 },
+  { name:'Pluto', tex:'pluto.jpg', r:2.5, d:295, speed:0.006, moons:1 },
+  { name:'Exoplanet', tex:'exoplanet.jpg', r:5, d:340, speed:0.004, moons:2 }
 ];
 
-const planets = [];
-const pivots = [];
+const planetMeshes = [];
+const orbitSystems = [];
 
-/* ---------- CREATE PLANETS ---------- */
-planetsData.forEach(p => {
-  const pivot = new THREE.Object3D();
-  scene.add(pivot);
+/* ---------- CREATE PLANETS + MOONS ---------- */
+planetData.forEach(p => {
+
+  const orbit = new THREE.Object3D();
+  orbit.rotation.y = Math.random() * Math.PI * 2;
+  orbit.rotation.x = (Math.random() - 0.5) * 0.3; // orbit tilt
+  scene.add(orbit);
 
   const planet = new THREE.Mesh(
     new THREE.SphereGeometry(p.r, 32, 32),
     new THREE.MeshStandardMaterial({
-      map: loader.load(`./assets/planets/${p.file}`),
-      emissiveIntensity: 0.4
+      map: loader.load(`./assets/planets/${p.tex}`),
+      emissiveIntensity: 0.35
     })
   );
-
   planet.position.x = p.d;
-  planet.userData = { name: p.name };
-  pivot.add(planet);
+  planet.userData.name = p.name;
+  orbit.add(planet);
 
-  pivots.push({ pivot, speed: p.speed });
-  planets.push(planet);
+  /* ----- MOONS ----- */
+  const moonPivots = [];
+  for (let i=0;i<p.moons;i++){
+    const moonPivot = new THREE.Object3D();
+    planet.add(moonPivot);
+
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.9,16,16),
+      new THREE.MeshStandardMaterial({ color:0xcccccc })
+    );
+    moon.position.x = 6 + i*2;
+    moonPivot.rotation.y = Math.random() * Math.PI * 2;
+    moonPivot.add(moon);
+    moonPivots.push(moonPivot);
+  }
+
+  orbitSystems.push({ orbit, speed:p.speed, moonPivots });
+  planetMeshes.push(planet);
 });
 
 /* ---------- CLICK TO FOCUS ---------- */
@@ -132,47 +140,46 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const label = document.getElementById('label');
 
-window.addEventListener('click', e => {
-  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
+window.addEventListener('click', e=>{
+  mouse.x = (e.clientX/innerWidth)*2 - 1;
+  mouse.y = -(e.clientY/innerHeight)*2 + 1;
   raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(planets);
-
-  if (hits.length > 0) {
-    const obj = hits[0].object;
-    controls.target.copy(obj.getWorldPosition(new THREE.Vector3()));
-    label.innerText = obj.userData.name;
+  const hit = raycaster.intersectObjects(planetMeshes);
+  if(hit.length){
+    controls.target.copy(hit[0].object.getWorldPosition(new THREE.Vector3()));
+    label.innerText = hit[0].object.userData.name;
     label.style.display = 'block';
   }
 });
 
 /* ---------- LABEL FOLLOW ---------- */
-function updateLabel() {
-  if (label.style.display === 'none') return;
-  const pos = controls.target.clone().project(camera);
-  label.style.left = ((pos.x + 1) / 2) * window.innerWidth + 'px';
-  label.style.top = ((-pos.y + 1) / 2) * window.innerHeight + 'px';
+function updateLabel(){
+  if(label.style.display==='none') return;
+  const p = controls.target.clone().project(camera);
+  label.style.left = ((p.x+1)/2)*innerWidth+'px';
+  label.style.top = ((-p.y+1)/2)*innerHeight+'px';
 }
 
 /* ---------- ANIMATE ---------- */
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
 
-  pivots.forEach(p => p.pivot.rotation.y += p.speed * 0.01);
+  orbitSystems.forEach(o=>{
+    o.orbit.rotation.y += o.speed*0.01;
+    o.moonPivots.forEach(m=> m.rotation.y += 0.02);
+  });
 
   controls.update();
   updateLabel();
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
-
 animate();
 
 /* ---------- RESIZE ---------- */
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+addEventListener('resize',()=>{
+  camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(innerWidth, innerHeight);
 });
 </script>
 </body>
