@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Real Space Effects</title>
+<title>Mini Universe – Real Space (Fixed)</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -38,7 +38,7 @@ renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHT ================= */
-scene.add(new THREE.AmbientLight(0xffffff,0.4));
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
 /* ================= CONTROLS (MAIN BASE) ================= */
@@ -47,20 +47,39 @@ controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
 controls.dampingFactor=0.15;
+controls.rotateSpeed=0.35;
 
-/* ================= DRAG ================= */
+/* ================= DRAG TRACK ================= */
 let isDragging=false;
 renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
 renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ================= CUSTOM ZOOM ================= */
-let zoomTarget=camera.position.length();
+let zoomTarget=camera.position.distanceTo(controls.target);
 let ZOOM_MIN=120, ZOOM_MAX=3200;
+const ZOOM_STEP=120, ZOOM_SMOOTH=0.08;
+
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  zoomTarget+=Math.sign(e.deltaY)*120;
+  zoomTarget+=Math.sign(e.deltaY)*ZOOM_STEP;
   zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
 },{passive:false});
+
+/* ================= STARS ================= */
+const starsGeo=new THREE.BufferGeometry();
+const stars=[];
+for(let i=0;i<12000;i++){
+  stars.push(
+    THREE.MathUtils.randFloatSpread(20000),
+    THREE.MathUtils.randFloatSpread(20000),
+    THREE.MathUtils.randFloatSpread(20000)
+  );
+}
+starsGeo.setAttribute("position",new THREE.Float32BufferAttribute(stars,3));
+scene.add(new THREE.Points(
+  starsGeo,
+  new THREE.PointsMaterial({ color:0xffffff, size:1 })
+));
 
 /* ================= TEXTURES ================= */
 const loader=new THREE.TextureLoader();
@@ -107,58 +126,38 @@ planetData.forEach(p=>{
   planets.push({...p,mesh,angle:Math.random()*Math.PI*2});
 });
 
-/* ================= COSMIC DUST ================= */
+/* ================= DUST ================= */
 const dustGeo=new THREE.BufferGeometry();
 const dust=[];
-for(let i=0;i<6000;i++){
+for(let i=0;i<7000;i++){
   dust.push(
-    THREE.MathUtils.randFloatSpread(1000),
-    THREE.MathUtils.randFloatSpread(30),
-    THREE.MathUtils.randFloatSpread(1000)
+    THREE.MathUtils.randFloatSpread(1200),
+    THREE.MathUtils.randFloatSpread(40),
+    THREE.MathUtils.randFloatSpread(1200)
   );
 }
 dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
-const dustPoints=new THREE.Points(
+scene.add(new THREE.Points(
   dustGeo,
   new THREE.PointsMaterial({ color:0xffffff, size:0.6, opacity:0.35, transparent:true })
-);
-scene.add(dustPoints);
-
-/* ================= COMETS ================= */
-const comets=[];
-function spawnComet(){
-  const comet=new THREE.Mesh(
-    new THREE.SphereGeometry(2,16,16),
-    new THREE.MeshBasicMaterial({ color:0xffffff })
-  );
-  comet.angle=Math.random()*Math.PI*2;
-  comet.dist=THREE.MathUtils.randFloat(200,800);
-  comet.speed=THREE.MathUtils.randFloat(0.004,0.008);
-  scene.add(comet);
-  comets.push(comet);
-}
-setInterval(spawnComet,8000);
+));
 
 /* ================= SHOOTING STARS ================= */
 const shootingStars=[];
-function spawnShootingStar(){
+setInterval(()=>{
   const geo=new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0,0,0),
-    new THREE.Vector3(0,0,-200)
+    new THREE.Vector3(0,0,-250)
   ]);
-  const star=new THREE.Line(
-    geo,
-    new THREE.LineBasicMaterial({ color:0xffffff })
-  );
+  const star=new THREE.Line(geo,new THREE.LineBasicMaterial({ color:0xffffff }));
   star.position.set(
-    THREE.MathUtils.randFloat(-1200,1200),
-    THREE.MathUtils.randFloat(200,600),
-    THREE.MathUtils.randFloat(-1200,1200)
+    THREE.MathUtils.randFloat(-1500,1500),
+    THREE.MathUtils.randFloat(300,800),
+    THREE.MathUtils.randFloat(-1500,1500)
   );
   scene.add(star);
-  shootingStars.push({star,life:40});
-}
-setInterval(spawnShootingStar,3000);
+  shootingStars.push({star,life:50});
+},3000);
 
 /* ================= LOOP ================= */
 function animate(){
@@ -166,24 +165,31 @@ function animate(){
 
   planets.forEach(p=>{
     p.angle+=ORBIT_SPEED*p.speed;
-    p.mesh.position.set(Math.cos(p.angle)*p.dist,0,Math.sin(p.angle)*p.dist);
-  });
-
-  comets.forEach(c=>{
-    c.angle+=c.speed;
-    c.position.set(Math.cos(c.angle)*c.dist,0,Math.sin(c.angle)*c.dist);
+    p.mesh.position.set(
+      Math.cos(p.angle)*p.dist,
+      0,
+      Math.sin(p.angle)*p.dist
+    );
   });
 
   shootingStars.forEach((s,i)=>{
-    s.star.position.z-=25;
+    s.star.position.z-=30;
     if(--s.life<=0){
       scene.remove(s.star);
       shootingStars.splice(i,1);
     }
   });
 
-  const dir=camera.position.clone().normalize();
-  camera.position.lerp(dir.multiplyScalar(zoomTarget),0.08);
+  /* 🔒 CORRECT TARGET-BASED ZOOM (FIX) */
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const dist=camera.position.distanceTo(controls.target);
+  camera.position.copy(
+    controls.target.clone().add(
+      dir.multiplyScalar(
+        THREE.MathUtils.lerp(dist, zoomTarget, ZOOM_SMOOTH)
+      )
+    )
+  );
 
   controls.update();
   renderer.render(scene,camera);
