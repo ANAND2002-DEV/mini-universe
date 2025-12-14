@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini Universe – NASA Correct Zoom</title>
+<title>Mini Universe – NASA Locked Planet Zoom</title>
 <style>
   body { margin:0; overflow:hidden; background:black; }
   #ui {
@@ -18,43 +18,47 @@
 </head>
 <body>
 
-<div id="ui">Click planet → inspect | Scroll = surface zoom | Click Sun = return</div>
+<div id="ui">
+  Click planet → focus & zoom | Click Sun or empty space → return
+</div>
 
 <script type="module">
 import * as THREE from './three/three.module.min.js';
 import { OrbitControls } from './three/OrbitControls.js';
 
-/* ---------- SCENE ---------- */
+/* ---------------- SCENE ---------------- */
 const scene = new THREE.Scene();
 
-/* ---------- CAMERA ---------- */
+/* ---------------- CAMERA ---------------- */
 const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 10000);
+camera.position.set(0, 200, 500);
 
-/* ---------- RENDERER ---------- */
+/* ---------------- RENDERER ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-/* ---------- CONTROLS ---------- */
+/* ---------------- CONTROLS ---------------- */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.1;
+controls.dampingFactor = 0.08;
+controls.enableZoom = false; // 🚫 zoom handled manually
 
-/* ---------- LIGHT ---------- */
+/* ---------------- LIGHT ---------------- */
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const sunLight = new THREE.PointLight(0xffffff, 3, 9000);
 scene.add(sunLight);
 
-/* ---------- TEXTURES ---------- */
+/* ---------------- TEXTURES ---------------- */
 const loader = new THREE.TextureLoader();
 
-/* ---------- STATE ---------- */
-let mode = 'solar';
+/* ---------------- STATE ---------------- */
+let mode = 'solar';        // 'solar' | 'planet'
 let focusedPlanet = null;
 let planetDistance = 0;
 
-/* ---------- SUN ---------- */
+/* ---------------- SUN ---------------- */
 const sun = new THREE.Mesh(
   new THREE.SphereGeometry(35,64,64),
   new THREE.MeshBasicMaterial({
@@ -63,7 +67,7 @@ const sun = new THREE.Mesh(
 );
 scene.add(sun);
 
-/* ---------- PLANETS ---------- */
+/* ---------------- PLANETS ---------------- */
 const planetData = [
   {name:'Mercury', file:'mercury.jpg', size:8,  dist:80,  speed:0.02},
   {name:'Venus',   file:'venus.jpg',   size:12, dist:120, speed:0.015},
@@ -100,21 +104,17 @@ planetData.forEach(p => {
   planets.push(planet);
 });
 
-/* ---------- NASA FOCUS ---------- */
+/* ---------------- FOCUS FUNCTIONS ---------------- */
 function focusPlanet(planet){
   mode = 'planet';
   focusedPlanet = planet;
-
   planetDistance = planet.userData.size * 4;
 
   controls.enableRotate = false;
   controls.enablePan = false;
-
-  controls.minDistance = planet.userData.size * 1.1;
-  controls.maxDistance = planet.userData.size * 12;
 }
 
-function returnSolar(){
+function returnToSolar(){
   mode = 'solar';
   focusedPlanet = null;
 
@@ -125,41 +125,48 @@ function returnSolar(){
   controls.target.set(0,0,0);
 }
 
-/* ---------- CLICK ---------- */
+/* ---------------- CLICK HANDLER ---------------- */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 window.addEventListener('click', e=>{
-  mouse.x = (e.clientX/innerWidth)*2-1;
-  mouse.y = -(e.clientY/innerHeight)*2+1;
-  raycaster.setFromCamera(mouse,camera);
+  mouse.x = (e.clientX/innerWidth)*2 - 1;
+  mouse.y = -(e.clientY/innerHeight)*2 + 1;
+  raycaster.setFromCamera(mouse, camera);
 
-  const pHit = raycaster.intersectObjects(planets);
-  if(pHit.length){
-    focusPlanet(pHit[0].object);
+  const hitPlanet = raycaster.intersectObjects(planets);
+  if(hitPlanet.length){
+    focusPlanet(hitPlanet[0].object);
     return;
   }
 
-  const sHit = raycaster.intersectObject(sun);
-  if(sHit.length){
-    returnSolar();
+  const hitSun = raycaster.intersectObject(sun);
+  if(hitSun.length){
+    returnToSolar();
+    return;
+  }
+
+  // 🌌 empty space click
+  if(mode === 'planet'){
+    returnToSolar();
   }
 });
 
-/* ---------- SCROLL ZOOM (NASA STYLE) ---------- */
+/* ---------------- SCROLL ZOOM (PLANET LOCKED) ---------------- */
 window.addEventListener('wheel', e=>{
-  if(mode!=='planet') return;
+  if(mode !== 'planet') return;
 
   e.preventDefault();
   planetDistance += e.deltaY * 0.01;
+
   planetDistance = THREE.MathUtils.clamp(
     planetDistance,
     focusedPlanet.userData.size * 1.1,
-    focusedPlanet.userData.size * 12
+    focusedPlanet.userData.size * 15
   );
 },{ passive:false });
 
-/* ---------- ANIMATION ---------- */
+/* ---------------- ANIMATION ---------------- */
 function animate(){
   requestAnimationFrame(animate);
 
@@ -167,7 +174,7 @@ function animate(){
     p.rotation.y += planetData[i].speed;
   });
 
-  if(mode==='planet' && focusedPlanet){
+  if(mode === 'planet' && focusedPlanet){
     const target = focusedPlanet.getWorldPosition(new THREE.Vector3());
     controls.target.copy(target);
 
@@ -182,7 +189,7 @@ function animate(){
 }
 animate();
 
-/* ---------- RESIZE ---------- */
+/* ---------------- RESIZE ---------------- */
 addEventListener('resize',()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
