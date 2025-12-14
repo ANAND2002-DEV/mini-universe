@@ -1,21 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Mini Universe – Realistic Orbits</title>
+<meta charset="UTF-8">
+<title>Mini Universe – Deep Zoom</title>
+
 <style>
   body { margin:0; overflow:hidden; background:black; }
   canvas { display:block; }
   .label {
     position:absolute;
     color:white;
-    font-size:12px;
+    font-size:13px;
+    background:rgba(0,0,0,0.65);
+    padding:4px 8px;
+    border-radius:5px;
     pointer-events:none;
-    background:rgba(0,0,0,0.6);
-    padding:2px 6px;
-    border-radius:4px;
-    transform:translate(-50%, -50%);
     display:none;
+    transform:translate(-50%,-50%);
   }
 </style>
 </head>
@@ -27,123 +28,134 @@
 import * as THREE from './three/three.module.min.js';
 import { OrbitControls } from './three/OrbitControls.js';
 
-/* ---------- SCENE ---------- */
+/* ---------------- SCENE ---------------- */
 const scene = new THREE.Scene();
 
-/* ---------- CAMERA ---------- */
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 6000);
-camera.position.set(0, 140, 300);
+/* ---------------- CAMERA ---------------- */
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 8000);
+camera.position.set(0, 160, 420);
 
-/* ---------- RENDERER ---------- */
+/* ---------------- RENDERER ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-/* ---------- CONTROLS ---------- */
+/* ---------------- CONTROLS ---------------- */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.minDistance = 40;
-controls.maxDistance = 1200;
+controls.dampingFactor = 0.05;
+controls.minDistance = 12;       // 🔍 very close zoom
+controls.maxDistance = 3000;     // 🌌 very far zoom
+controls.zoomSpeed = 1.6;
 
-/* ---------- LIGHT ---------- */
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const sunLight = new THREE.PointLight(0xffffff, 3.5, 3000);
+/* ---------------- LIGHT ---------------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+
+const sunLight = new THREE.PointLight(0xffffff, 4, 5000);
 scene.add(sunLight);
 
-/* ---------- STARS ---------- */
+/* ---------------- STARFIELD ---------------- */
 const starGeo = new THREE.BufferGeometry();
-const starCount = 9000;
-const starPos = [];
-for (let i=0;i<starCount;i++){
-  starPos.push(
-    (Math.random()-0.5)*3500,
-    (Math.random()-0.5)*3500,
-    (Math.random()-0.5)*3500
+const stars = [];
+for (let i = 0; i < 12000; i++) {
+  stars.push(
+    (Math.random()-0.5)*5000,
+    (Math.random()-0.5)*5000,
+    (Math.random()-0.5)*5000
   );
 }
-starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars,3));
 scene.add(new THREE.Points(
   starGeo,
-  new THREE.PointsMaterial({color:0xffffff, size:1})
+  new THREE.PointsMaterial({ color:0xffffff, size:1 })
 ));
 
-/* ---------- TEXTURES ---------- */
+/* ---------------- TEXTURES ---------------- */
 const loader = new THREE.TextureLoader();
 
-/* ---------- SUN ---------- */
+/* ---------------- SUN ---------------- */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(20,64,64),
-  new THREE.MeshBasicMaterial({ map: loader.load('./assets/planets/sun.jpg') })
+  new THREE.SphereGeometry(22,64,64),
+  new THREE.MeshBasicMaterial({
+    map: loader.load('./assets/planets/sun.jpg')
+  })
 );
 scene.add(sun);
 
-/* ---------- PLANET DATA ---------- */
+/* ---------------- PLANETS DATA ---------------- */
 const planetData = [
-  { name:'Mercury', tex:'mercury.jpg', r:3, d:40, speed:0.045, moons:0 },
-  { name:'Venus', tex:'venus.jpg', r:4, d:55, speed:0.035, moons:0 },
-  { name:'Earth', tex:'earth.jpg', r:4.5, d:75, speed:0.03, moons:1 },
-  { name:'Mars', tex:'mars.jpg', r:3.8, d:95, speed:0.026, moons:2 },
-  { name:'Jupiter', tex:'jupiter.jpg', r:9, d:135, speed:0.018, moons:4 },
-  { name:'Saturn', tex:'saturn.jpg', r:8, d:175, speed:0.014, moons:3 },
-  { name:'Uranus', tex:'uranus.jpg', r:6, d:215, speed:0.01, moons:2 },
-  { name:'Neptune', tex:'neptune.jpg', r:6, d:255, speed:0.008, moons:2 },
-  { name:'Pluto', tex:'pluto.jpg', r:2.5, d:295, speed:0.006, moons:1 },
-  { name:'Exoplanet', tex:'exoplanet.jpg', r:5, d:340, speed:0.004, moons:2 }
+  {name:'Mercury', tex:'mercury.jpg', r:3.2, d:45, speed:0.05, moons:0},
+  {name:'Venus', tex:'venus.jpg', r:4.5, d:62, speed:0.04, moons:0},
+  {name:'Earth', tex:'earth.jpg', r:5, d:85, speed:0.035, moons:1},
+  {name:'Mars', tex:'mars.jpg', r:4, d:110, speed:0.03, moons:2},
+  {name:'Jupiter', tex:'jupiter.jpg', r:11, d:160, speed:0.02, moons:4},
+  {name:'Saturn', tex:'saturn.jpg', r:9.5, d:210, speed:0.017, moons:3},
+  {name:'Uranus', tex:'uranus.jpg', r:7, d:260, speed:0.013, moons:2},
+  {name:'Neptune', tex:'neptune.jpg', r:7, d:310, speed:0.01, moons:2},
+  {name:'Pluto', tex:'pluto.jpg', r:3, d:360, speed:0.008, moons:1},
+  {name:'Exoplanet', tex:'exoplanet.jpg', r:5.5, d:420, speed:0.006, moons:2}
 ];
 
 const planetMeshes = [];
-const orbitSystems = [];
+const systems = [];
 
-/* ---------- CREATE PLANETS + MOONS ---------- */
+/* ---------------- CREATE PLANETS ---------------- */
 planetData.forEach(p => {
 
   const orbit = new THREE.Object3D();
-  orbit.rotation.y = Math.random() * Math.PI * 2;
-  orbit.rotation.x = (Math.random() - 0.5) * 0.3; // orbit tilt
+  orbit.rotation.y = Math.random()*Math.PI*2;
+  orbit.rotation.x = (Math.random()-0.5)*0.35;
   scene.add(orbit);
 
   const planet = new THREE.Mesh(
     new THREE.SphereGeometry(p.r, 32, 32),
     new THREE.MeshStandardMaterial({
-      map: loader.load(`./assets/planets/${p.tex}`),
-      emissiveIntensity: 0.35
+      map: loader.load('./assets/planets/'+p.tex),
+      roughness:0.7,
+      metalness:0,
+      emissiveIntensity:0.4
     })
   );
+
   planet.position.x = p.d;
   planet.userData.name = p.name;
   orbit.add(planet);
 
-  /* ----- MOONS ----- */
+  /* -------- MOONS (BRIGHTER) -------- */
   const moonPivots = [];
-  for (let i=0;i<p.moons;i++){
-    const moonPivot = new THREE.Object3D();
-    planet.add(moonPivot);
+  for(let i=0;i<p.moons;i++){
+    const pivot = new THREE.Object3D();
+    planet.add(pivot);
 
     const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(0.9,16,16),
-      new THREE.MeshStandardMaterial({ color:0xcccccc })
+      new THREE.SphereGeometry(1.2,16,16),
+      new THREE.MeshStandardMaterial({
+        color:0xffffff,
+        emissive:0xffffff,
+        emissiveIntensity:0.35
+      })
     );
-    moon.position.x = 6 + i*2;
-    moonPivot.rotation.y = Math.random() * Math.PI * 2;
-    moonPivot.add(moon);
-    moonPivots.push(moonPivot);
+
+    moon.position.x = 7 + i*3;
+    pivot.rotation.y = Math.random()*Math.PI*2;
+    pivot.add(moon);
+    moonPivots.push(pivot);
   }
 
-  orbitSystems.push({ orbit, speed:p.speed, moonPivots });
+  systems.push({orbit, speed:p.speed, moonPivots});
   planetMeshes.push(planet);
 });
 
-/* ---------- CLICK TO FOCUS ---------- */
+/* ---------------- CLICK TO FOCUS ---------------- */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const label = document.getElementById('label');
 
-window.addEventListener('click', e=>{
+addEventListener('click', e=>{
   mouse.x = (e.clientX/innerWidth)*2 - 1;
   mouse.y = -(e.clientY/innerHeight)*2 + 1;
-  raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse,camera);
   const hit = raycaster.intersectObjects(planetMeshes);
   if(hit.length){
     controls.target.copy(hit[0].object.getWorldPosition(new THREE.Vector3()));
@@ -152,7 +164,7 @@ window.addEventListener('click', e=>{
   }
 });
 
-/* ---------- LABEL FOLLOW ---------- */
+/* ---------------- LABEL FOLLOW ---------------- */
 function updateLabel(){
   if(label.style.display==='none') return;
   const p = controls.target.clone().project(camera);
@@ -160,13 +172,13 @@ function updateLabel(){
   label.style.top = ((-p.y+1)/2)*innerHeight+'px';
 }
 
-/* ---------- ANIMATE ---------- */
+/* ---------------- ANIMATE ---------------- */
 function animate(){
   requestAnimationFrame(animate);
 
-  orbitSystems.forEach(o=>{
-    o.orbit.rotation.y += o.speed*0.01;
-    o.moonPivots.forEach(m=> m.rotation.y += 0.02);
+  systems.forEach(s=>{
+    s.orbit.rotation.y += s.speed*0.01;
+    s.moonPivots.forEach(m=> m.rotation.y += 0.015);
   });
 
   controls.update();
@@ -175,7 +187,7 @@ function animate(){
 }
 animate();
 
-/* ---------- RESIZE ---------- */
+/* ---------------- RESIZE ---------------- */
 addEventListener('resize',()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
