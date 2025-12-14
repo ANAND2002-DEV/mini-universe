@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini Universe – Deep Zoom</title>
+<title>Mini Universe – Bright & Real</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -32,8 +32,8 @@ import { OrbitControls } from './three/OrbitControls.js';
 const scene = new THREE.Scene();
 
 /* ---------------- CAMERA ---------------- */
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 8000);
-camera.position.set(0, 160, 420);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 9000);
+camera.position.set(0, 180, 480);
 
 /* ---------------- RENDERER ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -44,25 +44,26 @@ document.body.appendChild(renderer.domElement);
 /* ---------------- CONTROLS ---------------- */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.minDistance = 12;       // 🔍 very close zoom
-controls.maxDistance = 3000;     // 🌌 very far zoom
-controls.zoomSpeed = 1.6;
+controls.dampingFactor = 0.06;
+controls.minDistance = 10;
+controls.maxDistance = 3500;
+controls.zoomSpeed = 1.7;
 
-/* ---------------- LIGHT ---------------- */
-scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+/* ---------------- LIGHTING (KEY FIX) ---------------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-const sunLight = new THREE.PointLight(0xffffff, 4, 5000);
+const sunLight = new THREE.PointLight(0xffffff, 6, 6000);
+sunLight.position.set(0,0,0);
 scene.add(sunLight);
 
 /* ---------------- STARFIELD ---------------- */
 const starGeo = new THREE.BufferGeometry();
 const stars = [];
-for (let i = 0; i < 12000; i++) {
+for (let i = 0; i < 14000; i++) {
   stars.push(
-    (Math.random()-0.5)*5000,
-    (Math.random()-0.5)*5000,
-    (Math.random()-0.5)*5000
+    (Math.random()-0.5)*6000,
+    (Math.random()-0.5)*6000,
+    (Math.random()-0.5)*6000
   );
 }
 starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars,3));
@@ -76,25 +77,25 @@ const loader = new THREE.TextureLoader();
 
 /* ---------------- SUN ---------------- */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(22,64,64),
+  new THREE.SphereGeometry(24,64,64),
   new THREE.MeshBasicMaterial({
     map: loader.load('./assets/planets/sun.jpg')
   })
 );
 scene.add(sun);
 
-/* ---------------- PLANETS DATA ---------------- */
+/* ---------------- PLANET DATA ---------------- */
 const planetData = [
-  {name:'Mercury', tex:'mercury.jpg', r:3.2, d:45, speed:0.05, moons:0},
-  {name:'Venus', tex:'venus.jpg', r:4.5, d:62, speed:0.04, moons:0},
-  {name:'Earth', tex:'earth.jpg', r:5, d:85, speed:0.035, moons:1},
-  {name:'Mars', tex:'mars.jpg', r:4, d:110, speed:0.03, moons:2},
-  {name:'Jupiter', tex:'jupiter.jpg', r:11, d:160, speed:0.02, moons:4},
-  {name:'Saturn', tex:'saturn.jpg', r:9.5, d:210, speed:0.017, moons:3},
-  {name:'Uranus', tex:'uranus.jpg', r:7, d:260, speed:0.013, moons:2},
-  {name:'Neptune', tex:'neptune.jpg', r:7, d:310, speed:0.01, moons:2},
-  {name:'Pluto', tex:'pluto.jpg', r:3, d:360, speed:0.008, moons:1},
-  {name:'Exoplanet', tex:'exoplanet.jpg', r:5.5, d:420, speed:0.006, moons:2}
+  {name:'Mercury', tex:'mercury.jpg', r:3.4, d:55, speed:0.05, moons:0},
+  {name:'Venus', tex:'venus.jpg', r:4.8, d:75, speed:0.04, moons:0},
+  {name:'Earth', tex:'earth.jpg', r:5.2, d:100, speed:0.035, moons:1},
+  {name:'Mars', tex:'mars.jpg', r:4.3, d:130, speed:0.03, moons:2},
+  {name:'Jupiter', tex:'jupiter.jpg', r:12, d:190, speed:0.02, moons:4},
+  {name:'Saturn', tex:'saturn.jpg', r:10.5, d:250, speed:0.017, moons:3},
+  {name:'Uranus', tex:'uranus.jpg', r:8, d:310, speed:0.013, moons:2},
+  {name:'Neptune', tex:'neptune.jpg', r:8, d:370, speed:0.01, moons:2},
+  {name:'Pluto', tex:'pluto.jpg', r:3.2, d:430, speed:0.008, moons:1},
+  {name:'Exoplanet', tex:'exoplanet.jpg', r:6, d:500, speed:0.006, moons:2}
 ];
 
 const planetMeshes = [];
@@ -105,16 +106,17 @@ planetData.forEach(p => {
 
   const orbit = new THREE.Object3D();
   orbit.rotation.y = Math.random()*Math.PI*2;
-  orbit.rotation.x = (Math.random()-0.5)*0.35;
+  orbit.rotation.x = (Math.random()-0.5)*0.25;
   scene.add(orbit);
 
   const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(p.r, 32, 32),
+    new THREE.SphereGeometry(p.r, 40, 40),
     new THREE.MeshStandardMaterial({
       map: loader.load('./assets/planets/'+p.tex),
-      roughness:0.7,
-      metalness:0,
-      emissiveIntensity:0.4
+      roughness:0.55,
+      metalness:0.05,
+      emissive: new THREE.Color(0x222222),
+      emissiveIntensity:0.35   // 🌍 brightness fix
     })
   );
 
@@ -122,22 +124,23 @@ planetData.forEach(p => {
   planet.userData.name = p.name;
   orbit.add(planet);
 
-  /* -------- MOONS (BRIGHTER) -------- */
+  /* -------- MOONS (TEXTURED + BRIGHT) -------- */
   const moonPivots = [];
   for(let i=0;i<p.moons;i++){
     const pivot = new THREE.Object3D();
     planet.add(pivot);
 
     const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(1.2,16,16),
+      new THREE.SphereGeometry(1.4, 24, 24),
       new THREE.MeshStandardMaterial({
-        color:0xffffff,
-        emissive:0xffffff,
-        emissiveIntensity:0.35
+        map: loader.load('./assets/planets/moon.jpg'),
+        roughness:0.8,
+        emissive: new THREE.Color(0x111111),
+        emissiveIntensity:0.2
       })
     );
 
-    moon.position.x = 7 + i*3;
+    moon.position.x = 8 + i*3.2;
     pivot.rotation.y = Math.random()*Math.PI*2;
     pivot.add(moon);
     moonPivots.push(pivot);
@@ -172,13 +175,13 @@ function updateLabel(){
   label.style.top = ((-p.y+1)/2)*innerHeight+'px';
 }
 
-/* ---------------- ANIMATE ---------------- */
+/* ---------------- ANIMATION ---------------- */
 function animate(){
   requestAnimationFrame(animate);
 
   systems.forEach(s=>{
     s.orbit.rotation.y += s.speed*0.01;
-    s.moonPivots.forEach(m=> m.rotation.y += 0.015);
+    s.moonPivots.forEach(m=> m.rotation.y += 0.012);
   });
 
   controls.update();
