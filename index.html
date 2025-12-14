@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Planet Locked Zoom</title>
+<title>Mini Universe – Final Camera Lock</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -49,10 +49,20 @@ scene.add(new THREE.PointLight(0xffffff, 2.5, 8000));
 /* ================= CONTROLS (ROTATE ONLY) ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
-controls.enableZoom = false; // 🔑 we handle zoom
+controls.enableZoom = false; // custom zoom
 controls.enableDamping = true;
 controls.dampingFactor = 0.15;
 controls.rotateSpeed = 0.35;
+
+/* ================= DRAG TRACKING ================= */
+let isDragging = false;
+
+renderer.domElement.addEventListener("pointerdown", () => {
+  isDragging = false;
+});
+renderer.domElement.addEventListener("pointermove", () => {
+  isDragging = true;
+});
 
 /* ================= CUSTOM ZOOM ================= */
 let zoomTarget = camera.position.length();
@@ -132,31 +142,51 @@ planetData.forEach(p=>{
   });
 });
 
-/* ================= CLICK → LOCK PLANET ================= */
+/* ================= CLICK → SELECT / RESET ================= */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selected = null;
 
-window.addEventListener("click", e=>{
-  mouse.x = (e.clientX/window.innerWidth)*2-1;
-  mouse.y = -(e.clientY/window.innerHeight)*2+1;
+window.addEventListener("click", (e) => {
 
-  raycaster.setFromCamera(mouse,camera);
-  const hits = raycaster.intersectObjects(planets.map(p=>p.mesh));
+  // 🚫 Ignore drag-end clicks
+  if (isDragging) return;
 
-  if(hits.length){
-    selected = planets.find(p=>p.mesh===hits[0].object);
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-    ZOOM_MIN = selected.size * 4;
-    ZOOM_MAX = selected.dist * 3;
-    zoomTarget = selected.dist * 2;
+  raycaster.setFromCamera(mouse, camera);
+
+  const clickable = [...planets.map(p=>p.mesh), sun];
+  const hits = raycaster.intersectObjects(clickable);
+
+  if (hits.length) {
+    const obj = hits[0].object;
+
+    // 🪐 Planet clicked
+    const planetHit = planets.find(p=>p.mesh===obj);
+    if (planetHit) {
+      selected = planetHit;
+      ZOOM_MIN = selected.size * 4;
+      ZOOM_MAX = selected.dist * 3;
+      zoomTarget = selected.dist * 2;
+      return;
+    }
+
+    // ☀️ Sun clicked → reset
+    if (obj === sun) {
+      selected = null;
+    }
   } else {
+    // 🌌 Empty space → reset
     selected = null;
-    controls.target.set(0,0,0);
-    ZOOM_MIN = 120;
-    ZOOM_MAX = 3200;
-    zoomTarget = camera.position.length();
   }
+
+  // 🔄 RESET VIEW
+  controls.target.set(0,0,0);
+  ZOOM_MIN = 120;
+  ZOOM_MAX = 3200;
+  zoomTarget = camera.position.length();
 });
 
 /* ================= RESIZE ================= */
@@ -179,12 +209,12 @@ function animate(){
     );
   });
 
-  /* 🔒 FORCE LOCK TARGET EVERY FRAME */
-  if(selected){
+  /* 🔒 FORCE TARGET LOCK */
+  if (selected) {
     controls.target.copy(selected.mesh.position);
   }
 
-  /* 🔑 ZOOM ALWAYS RELATIVE TO TARGET */
+  /* 🔑 SMOOTH ZOOM RELATIVE TO TARGET */
   const dir = camera.position.clone().sub(controls.target).normalize();
   const currentDist = camera.position.distanceTo(controls.target);
   const newDist = THREE.MathUtils.lerp(currentDist, zoomTarget, ZOOM_SMOOTH);
