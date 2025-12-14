@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Planet Zoom Locked</title>
+<title>Mini Universe – Planet Locked Zoom</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -46,18 +46,16 @@ document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 scene.add(new THREE.PointLight(0xffffff, 2.5, 8000));
 
-/* ================= CONTROLS (NO DEFAULT ZOOM) ================= */
+/* ================= CONTROLS (ROTATE ONLY) ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
-controls.enableZoom = false;
+controls.enableZoom = false; // 🔑 we handle zoom
 controls.enableDamping = true;
 controls.dampingFactor = 0.15;
-controls.rotateSpeed = 0.3;
+controls.rotateSpeed = 0.35;
 
-/* ================= CUSTOM ZOOM SYSTEM ================= */
+/* ================= CUSTOM ZOOM ================= */
 let zoomTarget = camera.position.length();
-
-/* 🌌 GLOBAL (SOLAR SYSTEM) LIMITS */
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 3200;
 
@@ -73,7 +71,7 @@ window.addEventListener("wheel", (e) => {
 /* ================= STARS ================= */
 const starsGeo = new THREE.BufferGeometry();
 const starsPos = [];
-for (let i = 0; i < 7000; i++) {
+for (let i=0;i<7000;i++){
   starsPos.push(
     (Math.random()-0.5)*9000,
     (Math.random()-0.5)*9000,
@@ -102,17 +100,17 @@ scene.add(sun);
 
 /* ================= PLANETS ================= */
 const planetData = [
-  { name:"Mercury",   size:4,  dist:70,  speed:1.8,  tex:"mercury.jpg" },
-  { name:"Venus",     size:6,  dist:95,  speed:1.5,  tex:"venus.jpg" },
-  { name:"Earth",     size:7,  dist:120, speed:1.2,  tex:"earth.jpg" },
-  { name:"Mars",      size:6,  dist:150, speed:1.0,  tex:"mars.jpg" },
-  { name:"Jupiter",   size:14, dist:200, speed:0.7,  tex:"jupiter.jpg" },
-  { name:"Saturn",    size:13, dist:260, speed:0.45, tex:"saturn.jpg" },
-  { name:"Uranus",    size:12, dist:320, speed:0.35, tex:"uranus.jpg" },
-  { name:"Neptune",   size:12, dist:380, speed:0.28, tex:"neptune.jpg" },
-  { name:"Pluto",     size:5,  dist:440, speed:0.22, tex:"pluto.jpg" },
-  { name:"Eris",      size:5,  dist:500, speed:0.18, tex:"eris.jpg" },
-  { name:"Exoplanet", size:8,  dist:560, speed:0.14, tex:"exoplanet.jpg" }
+  { name:"Mercury", size:4,  dist:70,  speed:1.8,  tex:"mercury.jpg" },
+  { name:"Venus",   size:6,  dist:95,  speed:1.5,  tex:"venus.jpg" },
+  { name:"Earth",   size:7,  dist:120, speed:1.2,  tex:"earth.jpg" },
+  { name:"Mars",    size:6,  dist:150, speed:1.0,  tex:"mars.jpg" },
+  { name:"Jupiter", size:14, dist:200, speed:0.7,  tex:"jupiter.jpg" },
+  { name:"Saturn",  size:13, dist:260, speed:0.45, tex:"saturn.jpg" },
+  { name:"Uranus",  size:12, dist:320, speed:0.35, tex:"uranus.jpg" },
+  { name:"Neptune", size:12, dist:380, speed:0.28, tex:"neptune.jpg" },
+  { name:"Pluto",   size:5,  dist:440, speed:0.22, tex:"pluto.jpg" },
+  { name:"Eris",    size:5,  dist:500, speed:0.18, tex:"eris.jpg" },
+  { name:"Exoplanet",size:8, dist:560, speed:0.14, tex:"exoplanet.jpg" }
 ];
 
 const planets = [];
@@ -134,7 +132,7 @@ planetData.forEach(p=>{
   });
 });
 
-/* ================= CLICK → PLANET ZOOM LOCK ================= */
+/* ================= CLICK → LOCK PLANET ================= */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let selected = null;
@@ -149,16 +147,12 @@ window.addEventListener("click", e=>{
   if(hits.length){
     selected = planets.find(p=>p.mesh===hits[0].object);
 
-    /* 🔒 PLANET-SPECIFIC ZOOM LIMITS */
-    ZOOM_MIN = selected.size * 4;     // max zoom-in
-    ZOOM_MAX = selected.dist * 3.2;   // max zoom-out
-
+    ZOOM_MIN = selected.size * 4;
+    ZOOM_MAX = selected.dist * 3;
     zoomTarget = selected.dist * 2;
   } else {
     selected = null;
     controls.target.set(0,0,0);
-
-    /* 🌌 BACK TO SOLAR SYSTEM LIMITS */
     ZOOM_MIN = 120;
     ZOOM_MAX = 3200;
     zoomTarget = camera.position.length();
@@ -185,11 +179,12 @@ function animate(){
     );
   });
 
+  /* 🔒 FORCE LOCK TARGET EVERY FRAME */
   if(selected){
     controls.target.copy(selected.mesh.position);
   }
 
-  /* 🔑 SMOOTH ZOOM APPLY */
+  /* 🔑 ZOOM ALWAYS RELATIVE TO TARGET */
   const dir = camera.position.clone().sub(controls.target).normalize();
   const currentDist = camera.position.distanceTo(controls.target);
   const newDist = THREE.MathUtils.lerp(currentDist, zoomTarget, ZOOM_SMOOTH);
