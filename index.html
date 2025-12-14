@@ -20,12 +20,19 @@ import * as THREE from "./three/three.module.min.js";
 const scene = new THREE.Scene();
 
 /* ================= CAMERA ================= */
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 10000);
+const camera = new THREE.PerspectiveCamera(
+  70,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  15000
+);
 
 let theta = Math.PI / 4;
 let phi = Math.PI / 3;
-let radius = 90;
-let tTheta = theta, tPhi = phi, tRadius = radius;
+let radius = 140;             // 🔥 START FARTHER
+let tTheta = theta;
+let tPhi = phi;
+let tRadius = radius;
 let focusedObject = null;
 
 function getFocus() {
@@ -60,61 +67,59 @@ renderer.toneMappingExposure = 1.1;
 renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHTING ================= */
+/* ================= LIGHTS ================= */
 scene.add(new THREE.PointLight(0xffffff, 170, 0, 2));
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 0.7));
 
-/* ================= STARFIELD (FIXED) ================= */
-const starGeometry = new THREE.BufferGeometry();
-const starCount = 8000;
-const starPositions = [];
-const starColors = [];
+/* ================= STARFIELD ================= */
+const starGeo = new THREE.BufferGeometry();
+const starCount = 10000;
+const starPos = [];
+const starCol = [];
 
 for (let i = 0; i < starCount; i++) {
-  starPositions.push(
-    (Math.random() - 0.5) * 8000,
-    (Math.random() - 0.5) * 8000,
-    (Math.random() - 0.5) * 8000
+  starPos.push(
+    (Math.random() - 0.5) * 12000,
+    (Math.random() - 0.5) * 12000,
+    (Math.random() - 0.5) * 12000
   );
-
-  const c = 0.7 + Math.random() * 0.3;
-  starColors.push(c, c, c);
+  const c = 0.75 + Math.random() * 0.25;
+  starCol.push(c, c, c);
 }
 
-starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
-starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
+starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+starGeo.setAttribute("color", new THREE.Float32BufferAttribute(starCol, 3));
 
-const starMaterial = new THREE.PointsMaterial({
-  size: 2.2,
-  vertexColors: true,
-  transparent: true
-});
-
-scene.add(new THREE.Points(starGeometry, starMaterial));
+scene.add(new THREE.Points(
+  starGeo,
+  new THREE.PointsMaterial({ size: 2.0, vertexColors: true })
+));
 
 /* ================= TEXTURES ================= */
 const loader = new THREE.TextureLoader();
 
 /* ================= SUN ================= */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(7, 64, 64),
+  new THREE.SphereGeometry(8, 64, 64),
   new THREE.MeshBasicMaterial({ map: loader.load("./assets/planets/sun.jpg") })
 );
 scene.add(sun);
 
 /* ================= PLANETS & MOONS ================= */
 const planetData = [
-  { size:1.2, dist:14, speed:0.0009, tex:"mercury.jpg" },
-  { size:1.6, dist:18, speed:0.0007, tex:"venus.jpg" },
-  { size:1.8, dist:22, speed:0.0006, tex:"earth.jpg", moons:1 },
-  { size:1.5, dist:26, speed:0.0005, tex:"mars.jpg" },
-  { size:3.4, dist:32, speed:0.0003, tex:"jupiter.jpg", moons:3 },
-  { size:3.0, dist:40, speed:0.00025, tex:"saturn.jpg", moons:2 },
-  { size:2.6, dist:48, speed:0.0002, tex:"uranus.jpg" },
-  { size:2.6, dist:56, speed:0.00015, tex:"neptune.jpg" },
-  { size:1.2, dist:64, speed:0.0001, tex:"pluto.jpg" },
-  { size:2.2, dist:74, speed:0.00008, tex:"exoplanet.jpg", moons:1 }
+  { size:1.2, dist:20, speed:0.0009, tex:"mercury.jpg" },
+  { size:1.6, dist:28, speed:0.0007, tex:"venus.jpg" },
+  { size:1.8, dist:36, speed:0.0006, tex:"earth.jpg", moons:1 },
+  { size:1.5, dist:44, speed:0.0005, tex:"mars.jpg" },
+
+  { size:3.4, dist:60, speed:0.0003, tex:"jupiter.jpg", moons:3 },
+  { size:3.0, dist:80, speed:0.00025, tex:"saturn.jpg", moons:2 },
+  { size:2.6, dist:100, speed:0.0002, tex:"uranus.jpg" },
+  { size:2.6, dist:120, speed:0.00015, tex:"neptune.jpg" },
+
+  { size:1.2, dist:145, speed:0.0001, tex:"pluto.jpg" },
+  { size:2.2, dist:180, speed:0.00008, tex:"exoplanet.jpg", moons:1 }
 ];
 
 const planets = [];
@@ -130,7 +135,7 @@ planetData.forEach(p => {
     new THREE.MeshStandardMaterial({
       map: loader.load("./assets/planets/" + p.tex),
       roughness: 0.45,
-      emissive: new THREE.Color(0x333333),
+      emissive: 0x333333,
       emissiveIntensity: 0.5
     })
   );
@@ -145,7 +150,7 @@ planetData.forEach(p => {
       planet.add(mp);
 
       const moon = new THREE.Mesh(
-        new THREE.SphereGeometry(p.size * 0.35, 32, 32),
+        new THREE.SphereGeometry(p.size * 0.25, 32, 32),
         new THREE.MeshStandardMaterial({
           color: 0xffffff,
           emissive: 0x444444,
@@ -153,7 +158,7 @@ planetData.forEach(p => {
         })
       );
 
-      moon.position.x = p.size * (3 + i * 1.4);
+      moon.position.x = p.size * (5 + i * 2.5);
       mp.add(moon);
       moonPivots.push(mp);
     }
@@ -175,7 +180,7 @@ window.addEventListener("click", e => {
   const hit = raycaster.intersectObjects(clickable);
   if (hit.length) {
     focusedObject = hit[0].object;
-    tRadius = Math.max(hit[0].object.geometry.parameters.radius * 1.5, 1);
+    tRadius = Math.max(hit[0].object.geometry.parameters.radius * 2.2, 1);
   }
 });
 
@@ -191,21 +196,21 @@ window.addEventListener("mousemove", e => {
   lx = e.clientX; ly = e.clientY;
 });
 window.addEventListener("wheel", e => {
-  tRadius += e.deltaY * 0.05;
-  tRadius = Math.max(1, Math.min(600, tRadius));
+  tRadius += e.deltaY * 0.08;   // 🔥 stronger zoom
+  tRadius = Math.max(1, Math.min(2000, tRadius)); // 🔥 MUCH farther
 });
 
-/* ================= ANIMATE ================= */
+/* ================= ANIMATION ================= */
 function animate() {
   requestAnimationFrame(animate);
 
   updateCamera();
-  sun.rotation.y += 0.0003;
+  sun.rotation.y += 0.00025;
 
   planets.forEach(p => {
     p.pivot.rotation.y += p.speed;
-    p.planet.rotation.y += 0.001;
-    p.moons.forEach((m, i) => m.rotation.y += 0.02 + i * 0.01);
+    p.planet.rotation.y += 0.0008;
+    p.moons.forEach((m, i) => m.rotation.y += 0.0015 + i * 0.0008);
   });
 
   renderer.render(scene, camera);
