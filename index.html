@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Mini Universe – GitHub Test</title>
+<style>
+  body { margin: 0; overflow: hidden; background: black; }
+</style>
+</head>
+<body>
+
+<script type="module">
+/* ✅ IMPORT THREE FROM CDN (NO "three") */
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+/* 🌌 SCENE */
+const scene = new THREE.Scene();
+
+/* 🎥 CAMERA */
+const camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+camera.position.z = 5;
+
+/* 🖥️ RENDERER */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* 💡 LIGHT */
+scene.add(new THREE.AmbientLight(0xffffff, 1));
+
+/* 🟢 TEST OBJECT (GREEN SPHERE) */
+const sphere = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 32, 32),
+  new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+);
+scene.add(sphere);
+
+/* 🔄 RESIZE */
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* 🚀 LOOP */
+function animate() {
+  requestAnimationFrame(animate);
+  sphere.rotation.y += 0.01;
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+
+</body>
+</html>
