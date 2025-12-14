@@ -1,200 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Mini Universe – NASA Locked Planet Zoom</title>
+<meta charset="UTF-8" />
+<title>Mini Universe – NASA Zoom Base</title>
 <style>
-  body { margin:0; overflow:hidden; background:black; }
-  #ui {
-    position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #aaa;
-    font-size: 13px;
-    font-family: Arial;
-  }
+  body { margin: 0; overflow: hidden; background: black; }
+  canvas { display: block; }
 </style>
 </head>
 <body>
 
-<div id="ui">
-  Click planet → focus & zoom | Click Sun or empty space → return
-</div>
-
 <script type="module">
-import * as THREE from './three/three.module.min.js';
-import { OrbitControls } from './three/OrbitControls.js';
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-/* ---------------- SCENE ---------------- */
-const scene = new THREE.Scene();
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 5000);
 
-/* ---------------- CAMERA ---------------- */
-const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 10000);
-camera.position.set(0, 200, 500);
+camera.position.set(0, 120, 260);
 
-/* ---------------- RENDERER ---------------- */
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+let renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-/* ---------------- CONTROLS ---------------- */
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.enableZoom = false; // 🚫 zoom handled manually
-
-/* ---------------- LIGHT ---------------- */
+/* 🌟 LIGHTING */
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const sunLight = new THREE.PointLight(0xffffff, 3, 9000);
+let sunLight = new THREE.PointLight(0xffffff, 2, 2000);
 scene.add(sunLight);
 
-/* ---------------- TEXTURES ---------------- */
+/* 🎥 CONTROLS (NASA STYLE) */
+let controls = new OrbitControls(camera, renderer.domElement);
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.rotateSpeed = 0.4;
+controls.zoomSpeed = 0.6;
+
+/* 🌌 STAR BACKGROUND */
+let starsGeo = new THREE.BufferGeometry();
+let starsCount = 3000;
+let starPositions = [];
+for (let i = 0; i < starsCount; i++) {
+  starPositions.push(
+    (Math.random() - 0.5) * 4000,
+    (Math.random() - 0.5) * 4000,
+    (Math.random() - 0.5) * 4000
+  );
+}
+starsGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+let starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+scene.add(new THREE.Points(starsGeo, starsMat));
+
+/* 🪐 TEXTURE LOADER */
 const loader = new THREE.TextureLoader();
 
-/* ---------------- STATE ---------------- */
-let mode = 'solar';        // 'solar' | 'planet'
-let focusedPlanet = null;
-let planetDistance = 0;
-
-/* ---------------- SUN ---------------- */
+/* ☀️ SUN */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(35,64,64),
-  new THREE.MeshBasicMaterial({
-    map: loader.load('./assets/planets/sun.jpg')
+  new THREE.SphereGeometry(30, 64, 64),
+  new THREE.MeshStandardMaterial({
+    map: loader.load("assets/planets/sun.jpg"),
+    emissive: new THREE.Color(0xffaa00),
+    emissiveIntensity: 1.5
   })
 );
 scene.add(sun);
 
-/* ---------------- PLANETS ---------------- */
+/* 🪐 PLANET DATA */
 const planetData = [
-  {name:'Mercury', file:'mercury.jpg', size:8,  dist:80,  speed:0.02},
-  {name:'Venus',   file:'venus.jpg',   size:12, dist:120, speed:0.015},
-  {name:'Earth',   file:'earth.jpg',   size:14, dist:170, speed:0.012},
-  {name:'Mars',    file:'mars.jpg',    size:11, dist:220, speed:0.01},
-  {name:'Jupiter', file:'jupiter.jpg', size:26, dist:300, speed:0.006},
-  {name:'Saturn',  file:'saturn.jpg',  size:23, dist:380, speed:0.005},
-  {name:'Uranus',  file:'uranus.jpg',  size:19, dist:460, speed:0.004},
-  {name:'Neptune', file:'neptune.jpg', size:19, dist:540, speed:0.003},
-  {name:'Pluto',   file:'pluto.jpg',   size:7,  dist:620, speed:0.002},
-  {name:'Exoplanet', file:'exoplanet.jpg', size:15, dist:700, speed:0.0015}
+  { name:"Mercury", size:4, dist:45, speed:1.6, tex:"mercury.jpg" },
+  { name:"Venus", size:7, dist:65, speed:1.3, tex:"venus.jpg" },
+  { name:"Earth", size:8, dist:85, speed:1.0, tex:"earth.jpg" },
+  { name:"Mars", size:6, dist:110, speed:0.8, tex:"mars.jpg" },
+  { name:"Jupiter", size:16, dist:150, speed:0.4, tex:"jupiter.jpg" },
+  { name:"Saturn", size:14, dist:190, speed:0.3, tex:"saturn.jpg" },
+  { name:"Uranus", size:11, dist:230, speed:0.2, tex:"uranus.jpg" },
+  { name:"Neptune", size:11, dist:270, speed:0.15, tex:"neptune.jpg" }
 ];
 
-const pivots = [];
-const planets = [];
+let planets = [];
+const ORBIT_SPEED = 0.0001;
 
+/* 🪐 CREATE PLANETS */
 planetData.forEach(p => {
-  const pivot = new THREE.Object3D();
-  pivot.rotation.y = Math.random()*Math.PI*2;
-  scene.add(pivot);
-  pivots.push(pivot);
-
-  const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(p.size,64,64),
+  let mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(p.size, 48, 48),
     new THREE.MeshStandardMaterial({
-      map: loader.load('./assets/planets/'+p.file),
-      roughness:0.4
+      map: loader.load("assets/planets/" + p.tex)
     })
   );
 
-  planet.position.x = p.dist;
-  planet.userData = p;
-  pivot.add(planet);
-  planets.push(planet);
+  scene.add(mesh);
+
+  planets.push({
+    mesh,
+    angle: Math.random() * Math.PI * 2,
+    dist: p.dist,
+    speed: p.speed,
+    size: p.size
+  });
 });
 
-/* ---------------- FOCUS FUNCTIONS ---------------- */
-function focusPlanet(planet){
-  mode = 'planet';
-  focusedPlanet = planet;
-  planetDistance = planet.userData.size * 4;
+/* 🎯 RAYCAST CLICK */
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let selectedPlanet = null;
 
-  controls.enableRotate = false;
-  controls.enablePan = false;
-}
+window.addEventListener("click", e => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-function returnToSolar(){
-  mode = 'solar';
-  focusedPlanet = null;
-
-  controls.enableRotate = true;
-  controls.enablePan = true;
-
-  camera.position.set(0,200,500);
-  controls.target.set(0,0,0);
-}
-
-/* ---------------- CLICK HANDLER ---------------- */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-window.addEventListener('click', e=>{
-  mouse.x = (e.clientX/innerWidth)*2 - 1;
-  mouse.y = -(e.clientY/innerHeight)*2 + 1;
   raycaster.setFromCamera(mouse, camera);
+  let hits = raycaster.intersectObjects(planets.map(p => p.mesh));
 
-  const hitPlanet = raycaster.intersectObjects(planets);
-  if(hitPlanet.length){
-    focusPlanet(hitPlanet[0].object);
-    return;
-  }
+  if (hits.length > 0) {
+    selectedPlanet = planets.find(p => p.mesh === hits[0].object);
 
-  const hitSun = raycaster.intersectObject(sun);
-  if(hitSun.length){
-    returnToSolar();
-    return;
-  }
-
-  // 🌌 empty space click
-  if(mode === 'planet'){
-    returnToSolar();
+    controls.target.copy(selectedPlanet.mesh.position);
+    controls.minDistance = selectedPlanet.size * 1.2;
+    controls.maxDistance = selectedPlanet.size * 15;
+  } else {
+    selectedPlanet = null;
+    controls.target.set(0,0,0);
+    controls.minDistance = 40;
+    controls.maxDistance = 1000;
   }
 });
 
-/* ---------------- SCROLL ZOOM (PLANET LOCKED) ---------------- */
-window.addEventListener('wheel', e=>{
-  if(mode !== 'planet') return;
+/* 🔄 RESIZE */
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
-  e.preventDefault();
-  planetDistance += e.deltaY * 0.01;
-
-  planetDistance = THREE.MathUtils.clamp(
-    planetDistance,
-    focusedPlanet.userData.size * 1.1,
-    focusedPlanet.userData.size * 15
-  );
-},{ passive:false });
-
-/* ---------------- ANIMATION ---------------- */
-function animate(){
+/* 🚀 ANIMATION LOOP */
+function animate() {
   requestAnimationFrame(animate);
 
-  pivots.forEach((p,i)=>{
-    p.rotation.y += planetData[i].speed;
+  planets.forEach(p => {
+    p.angle += ORBIT_SPEED * p.speed;
+    p.mesh.position.set(
+      Math.cos(p.angle) * p.dist,
+      0,
+      Math.sin(p.angle) * p.dist
+    );
   });
 
-  if(mode === 'planet' && focusedPlanet){
-    const target = focusedPlanet.getWorldPosition(new THREE.Vector3());
-    controls.target.copy(target);
-
-    const dir = new THREE.Vector3(1,0.4,1).normalize();
-    camera.position.copy(
-      target.clone().add(dir.multiplyScalar(planetDistance))
-    );
+  if (selectedPlanet) {
+    controls.target.copy(selectedPlanet.mesh.position);
   }
 
   controls.update();
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
-animate();
 
-/* ---------------- RESIZE ---------------- */
-addEventListener('resize',()=>{
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
+animate();
 </script>
 
 </body>
