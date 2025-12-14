@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Mini Universe – Working Base</title>
+<title>Mini Universe – Scaled View</title>
 <style>
   body { margin:0; overflow:hidden; background:black; }
   canvas { display:block; }
@@ -11,73 +11,70 @@
 <body>
 
 <script type="module">
-/* -------- IMPORTS (CORRECT) -------- */
 import * as THREE from './three/three.module.min.js';
 import { OrbitControls } from './three/OrbitControls.js';
 
-/* -------- SCENE -------- */
+/* SCENE */
 const scene = new THREE.Scene();
 
-/* -------- CAMERA -------- */
+/* CAMERA (CLOSER) */
 const camera = new THREE.PerspectiveCamera(
   60,
   window.innerWidth / window.innerHeight,
   0.1,
   6000
 );
-camera.position.set(0, 150, 400);
+camera.position.set(0, 110, 260); // 👈 closer than before
 
-/* -------- RENDERER -------- */
+/* RENDERER */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-/* -------- CONTROLS -------- */
+/* CONTROLS */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.minDistance = 20;
-controls.maxDistance = 3000;
-controls.zoomSpeed = 1.2;
+controls.minDistance = 15;
+controls.maxDistance = 2500;
+controls.zoomSpeed = 1.35;
 
-/* -------- LIGHT -------- */
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-
-const sunLight = new THREE.PointLight(0xffffff, 2.5, 4000);
+/* LIGHT */
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const sunLight = new THREE.PointLight(0xffffff, 2.8, 5000);
 sunLight.position.set(0,0,0);
 scene.add(sunLight);
 
-/* -------- TEXTURE LOADER -------- */
+/* TEXTURES */
 const loader = new THREE.TextureLoader();
 
-/* -------- SUN -------- */
+/* SUN (BIGGER) */
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(22, 64, 64),
+  new THREE.SphereGeometry(30, 64, 64), // ⬆️ bigger sun
   new THREE.MeshBasicMaterial({
     map: loader.load('./assets/planets/sun.jpg')
   })
 );
 scene.add(sun);
 
-/* -------- PLANET DATA (10) -------- */
+/* PLANETS (SCALED UP) */
 const planetsData = [
-  { file:'mercury.jpg', size:5,  dist:50,  speed:0.02 },
-  { file:'venus.jpg',   size:8,  dist:75,  speed:0.015 },
-  { file:'earth.jpg',   size:9,  dist:105, speed:0.012 },
-  { file:'mars.jpg',    size:7,  dist:135, speed:0.01 },
-  { file:'jupiter.jpg', size:18, dist:185, speed:0.006 },
-  { file:'saturn.jpg',  size:16, dist:245, speed:0.005 },
-  { file:'uranus.jpg',  size:13, dist:305, speed:0.004 },
-  { file:'neptune.jpg', size:13, dist:365, speed:0.003 },
-  { file:'pluto.jpg',   size:5,  dist:425, speed:0.002 },
-  { file:'exoplanet.jpg', size:10, dist:495, speed:0.0015 }
+  { file:'mercury.jpg',   size:8,  dist:70,  speed:0.02 },
+  { file:'venus.jpg',     size:12, dist:100, speed:0.015 },
+  { file:'earth.jpg',     size:13, dist:140, speed:0.012 },
+  { file:'mars.jpg',      size:11, dist:180, speed:0.01 },
+  { file:'jupiter.jpg',   size:26, dist:240, speed:0.006 },
+  { file:'saturn.jpg',    size:23, dist:310, speed:0.005 },
+  { file:'uranus.jpg',    size:19, dist:380, speed:0.004 },
+  { file:'neptune.jpg',   size:19, dist:450, speed:0.003 },
+  { file:'pluto.jpg',     size:7,  dist:520, speed:0.002 },
+  { file:'exoplanet.jpg', size:15, dist:600, speed:0.0015 }
 ];
 
 const pivots = [];
-const planets = [];
 
-/* -------- CREATE PLANETS -------- */
+/* CREATE PLANETS */
 planetsData.forEach(p => {
 
   const pivot = new THREE.Object3D();
@@ -89,18 +86,17 @@ planetsData.forEach(p => {
     new THREE.SphereGeometry(p.size, 48, 48),
     new THREE.MeshStandardMaterial({
       map: loader.load('./assets/planets/' + p.file),
-      roughness: 0.5,
+      roughness: 0.45,
       metalness: 0.05
     })
   );
 
   planet.position.x = p.dist;
   pivot.add(planet);
-  planets.push(planet);
 
-  /* Orbit Ring */
+  /* ORBIT RING */
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(p.dist - 0.3, p.dist + 0.3, 128),
+    new THREE.RingGeometry(p.dist - 0.4, p.dist + 0.4, 128),
     new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -112,10 +108,10 @@ planetsData.forEach(p => {
   scene.add(ring);
 });
 
-/* -------- STAR BACKGROUND -------- */
+/* STARFIELD */
 const starGeo = new THREE.BufferGeometry();
 const starPos = [];
-for (let i = 0; i < 5000; i++) {
+for (let i = 0; i < 6000; i++) {
   starPos.push(
     (Math.random() - 0.5) * 4000,
     (Math.random() - 0.5) * 4000,
@@ -128,20 +124,18 @@ scene.add(new THREE.Points(
   new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 })
 ));
 
-/* -------- ANIMATION -------- */
+/* ANIMATION */
 function animate() {
   requestAnimationFrame(animate);
-
   pivots.forEach((p, i) => {
     p.rotation.y += planetsData[i].speed;
   });
-
   controls.update();
   renderer.render(scene, camera);
 }
 animate();
 
-/* -------- RESIZE -------- */
+/* RESIZE */
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -151,4 +145,5 @@ window.addEventListener('resize', () => {
 
 </body>
 </html>
+
 
