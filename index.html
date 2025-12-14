@@ -24,15 +24,13 @@ const camera = new THREE.PerspectiveCamera(
   70,
   window.innerWidth / window.innerHeight,
   0.1,
-  15000
+  12000
 );
 
 let theta = Math.PI / 4;
 let phi = Math.PI / 3;
-let radius = 140;             // 🔥 START FARTHER
-let tTheta = theta;
-let tPhi = phi;
-let tRadius = radius;
+let radius = 110;   // compact start
+let tTheta = theta, tPhi = phi, tRadius = radius;
 let focusedObject = null;
 
 function getFocus() {
@@ -47,7 +45,7 @@ function getFocus() {
 function updateCamera() {
   theta += (tTheta - theta) * 0.08;
   phi += (tPhi - phi) * 0.08;
-  radius += (tRadius - radius) * 0.15;
+  radius += (tRadius - radius) * 0.14;
 
   const f = getFocus();
   camera.position.set(
@@ -74,15 +72,15 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 0.7));
 
 /* ================= STARFIELD ================= */
 const starGeo = new THREE.BufferGeometry();
-const starCount = 10000;
+const starCount = 7000;
 const starPos = [];
 const starCol = [];
 
 for (let i = 0; i < starCount; i++) {
   starPos.push(
-    (Math.random() - 0.5) * 12000,
-    (Math.random() - 0.5) * 12000,
-    (Math.random() - 0.5) * 12000
+    (Math.random() - 0.5) * 8000,
+    (Math.random() - 0.5) * 8000,
+    (Math.random() - 0.5) * 8000
   );
   const c = 0.75 + Math.random() * 0.25;
   starCol.push(c, c, c);
@@ -93,7 +91,7 @@ starGeo.setAttribute("color", new THREE.Float32BufferAttribute(starCol, 3));
 
 scene.add(new THREE.Points(
   starGeo,
-  new THREE.PointsMaterial({ size: 2.0, vertexColors: true })
+  new THREE.PointsMaterial({ size: 1.8, vertexColors: true })
 ));
 
 /* ================= TEXTURES ================= */
@@ -108,18 +106,18 @@ scene.add(sun);
 
 /* ================= PLANETS & MOONS ================= */
 const planetData = [
-  { size:1.2, dist:20, speed:0.0009, tex:"mercury.jpg" },
-  { size:1.6, dist:28, speed:0.0007, tex:"venus.jpg" },
-  { size:1.8, dist:36, speed:0.0006, tex:"earth.jpg", moons:1 },
-  { size:1.5, dist:44, speed:0.0005, tex:"mars.jpg" },
+  { size:1.2, dist:18, speed:0.0009, tex:"mercury.jpg" },
+  { size:1.6, dist:24, speed:0.0007, tex:"venus.jpg" },
+  { size:1.8, dist:30, speed:0.0006, tex:"earth.jpg", moons:1 },
+  { size:1.5, dist:36, speed:0.0005, tex:"mars.jpg" },
 
-  { size:3.4, dist:60, speed:0.0003, tex:"jupiter.jpg", moons:3 },
-  { size:3.0, dist:80, speed:0.00025, tex:"saturn.jpg", moons:2 },
-  { size:2.6, dist:100, speed:0.0002, tex:"uranus.jpg" },
-  { size:2.6, dist:120, speed:0.00015, tex:"neptune.jpg" },
+  { size:3.2, dist:46, speed:0.0003, tex:"jupiter.jpg", moons:3 },
+  { size:2.9, dist:58, speed:0.00025, tex:"saturn.jpg", moons:2 },
+  { size:2.5, dist:70, speed:0.0002, tex:"uranus.jpg" },
+  { size:2.5, dist:82, speed:0.00015, tex:"neptune.jpg" },
 
-  { size:1.2, dist:145, speed:0.0001, tex:"pluto.jpg" },
-  { size:2.2, dist:180, speed:0.00008, tex:"exoplanet.jpg", moons:1 }
+  { size:1.2, dist:94, speed:0.0001, tex:"pluto.jpg" },
+  { size:2.0, dist:108, speed:0.00008, tex:"exoplanet.jpg", moons:1 }
 ];
 
 const planets = [];
@@ -150,15 +148,16 @@ planetData.forEach(p => {
       planet.add(mp);
 
       const moon = new THREE.Mesh(
-        new THREE.SphereGeometry(p.size * 0.25, 32, 32),
+        new THREE.SphereGeometry(p.size * 0.22, 32, 32),
         new THREE.MeshStandardMaterial({
           color: 0xffffff,
           emissive: 0x444444,
-          emissiveIntensity: 0.6
+          emissiveIntensity: 0.5
         })
       );
 
-      moon.position.x = p.size * (5 + i * 2.5);
+      // 🔑 MOONS CLOSER (COMPACT)
+      moon.position.x = p.size * (3.2 + i * 1.4);
       mp.add(moon);
       moonPivots.push(mp);
     }
@@ -180,7 +179,7 @@ window.addEventListener("click", e => {
   const hit = raycaster.intersectObjects(clickable);
   if (hit.length) {
     focusedObject = hit[0].object;
-    tRadius = Math.max(hit[0].object.geometry.parameters.radius * 2.2, 1);
+    tRadius = Math.max(hit[0].object.geometry.parameters.radius * 2, 1);
   }
 });
 
@@ -196,8 +195,8 @@ window.addEventListener("mousemove", e => {
   lx = e.clientX; ly = e.clientY;
 });
 window.addEventListener("wheel", e => {
-  tRadius += e.deltaY * 0.08;   // 🔥 stronger zoom
-  tRadius = Math.max(1, Math.min(2000, tRadius)); // 🔥 MUCH farther
+  tRadius += e.deltaY * 0.07;
+  tRadius = Math.max(1, Math.min(1500, tRadius));
 });
 
 /* ================= ANIMATION ================= */
@@ -210,7 +209,11 @@ function animate() {
   planets.forEach(p => {
     p.pivot.rotation.y += p.speed;
     p.planet.rotation.y += 0.0008;
-    p.moons.forEach((m, i) => m.rotation.y += 0.0015 + i * 0.0008);
+
+    // 🌕 slower, compact moon orbit
+    p.moons.forEach((m, i) => {
+      m.rotation.y += 0.0012 + i * 0.0006;
+    });
   });
 
   renderer.render(scene, camera);
