@@ -31,20 +31,19 @@
     5000
   );
 
-  // Camera spherical values
+  // Camera spherical values (old project feel)
   let theta = Math.PI / 4;
   let phi = Math.PI / 3;
-  let radius = 40;
+  let radius = 45;
 
-  // Target values (for smooth inertia)
   let targetTheta = theta;
   let targetPhi = phi;
   let targetRadius = radius;
 
   function updateCameraSmooth() {
-    theta += (targetTheta - theta) * 0.08;
-    phi   += (targetPhi - phi) * 0.08;
-    radius += (targetRadius - radius) * 0.1;
+    theta += (targetTheta - theta) * 0.07;
+    phi   += (targetPhi - phi) * 0.07;
+    radius += (targetRadius - radius) * 0.08;
 
     const x = radius * Math.sin(phi) * Math.sin(theta);
     const y = radius * Math.cos(phi);
@@ -59,12 +58,14 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  /* ================= LIGHTS ================= */
-  const sunLight = new THREE.PointLight(0xffffff, 4);
+  /* ================= LIGHTING ================= */
+  // Strong sunlight
+  const sunLight = new THREE.PointLight(0xffffff, 5.5, 0, 2);
   sunLight.position.set(0, 0, 0);
   scene.add(sunLight);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  // Bright ambient fill (fix dark planets)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
   scene.add(ambientLight);
 
   /* ================= TEXTURE LOADER ================= */
@@ -79,18 +80,18 @@
   );
   scene.add(sun);
 
-  /* ================= PLANETS (SLOW SPEEDS) ================= */
+  /* ================= PLANETS (VERY SLOW & BRIGHT) ================= */
   const planetsData = [
-    { size: 0.4, distance: 6,  speed: 0.004, texture: "mercury.jpg" },
-    { size: 0.6, distance: 8,  speed: 0.0032, texture: "venus.jpg" },
-    { size: 0.7, distance: 10, speed: 0.0026, texture: "earth.jpg" },
-    { size: 0.5, distance: 12, speed: 0.0022, texture: "mars.jpg" },
-    { size: 1.6, distance: 16, speed: 0.0016, texture: "jupiter.jpg" },
-    { size: 1.4, distance: 20, speed: 0.0013, texture: "saturn.jpg" },
-    { size: 1.2, distance: 24, speed: 0.0010, texture: "uranus.jpg" },
-    { size: 1.2, distance: 28, speed: 0.0008, texture: "neptune.jpg" },
-    { size: 0.4, distance: 32, speed: 0.0006, texture: "pluto.jpg" },
-    { size: 0.9, distance: 36, speed: 0.0004, texture: "exoplanet.jpg" }
+    { size: 0.4, distance: 6,  speed: 0.0012, texture: "mercury.jpg" },
+    { size: 0.6, distance: 8,  speed: 0.0010, texture: "venus.jpg" },
+    { size: 0.7, distance: 10, speed: 0.0008, texture: "earth.jpg" },
+    { size: 0.5, distance: 12, speed: 0.0007, texture: "mars.jpg" },
+    { size: 1.6, distance: 16, speed: 0.0005, texture: "jupiter.jpg" },
+    { size: 1.4, distance: 20, speed: 0.0004, texture: "saturn.jpg" },
+    { size: 1.2, distance: 24, speed: 0.0003, texture: "uranus.jpg" },
+    { size: 1.2, distance: 28, speed: 0.00025, texture: "neptune.jpg" },
+    { size: 0.4, distance: 32, speed: 0.0002, texture: "pluto.jpg" },
+    { size: 0.9, distance: 36, speed: 0.00015, texture: "exoplanet.jpg" }
   ];
 
   const planets = [];
@@ -103,8 +104,10 @@
       new THREE.SphereGeometry(p.size, 32, 32),
       new THREE.MeshStandardMaterial({
         map: loader.load("./assets/planets/" + p.texture),
-        roughness: 0.6,
-        metalness: 0.1
+        roughness: 0.45,
+        metalness: 0.05,
+        emissive: new THREE.Color(0x111111),
+        emissiveIntensity: 0.35
       })
     );
 
@@ -138,31 +141,30 @@
     targetTheta -= dx * 0.004;
     targetPhi   -= dy * 0.004;
 
-    targetPhi = Math.max(0.25, Math.min(Math.PI - 0.25, targetPhi));
+    targetPhi = Math.max(0.3, Math.min(Math.PI - 0.3, targetPhi));
 
     lastX = e.clientX;
     lastY = e.clientY;
   });
 
   window.addEventListener("wheel", e => {
-    targetRadius += e.deltaY * 0.05;
-    targetRadius = Math.max(15, Math.min(150, targetRadius));
+    targetRadius += e.deltaY * 0.06;
+    targetRadius = Math.max(18, Math.min(160, targetRadius));
   });
 
   /* ================= ANIMATION ================= */
   function animate() {
     requestAnimationFrame(animate);
 
-    // Smooth camera
     updateCameraSmooth();
 
-    // Sun rotation (slow)
-    sun.rotation.y += 0.0015;
+    // Very slow sun rotation
+    sun.rotation.y += 0.0009;
 
-    // Planet orbits (slow & calm)
+    // Calm planetary motion
     planets.forEach(p => {
       p.orbit.rotation.y += p.speed;
-      p.planet.rotation.y += 0.004;
+      p.planet.rotation.y += 0.002;
     });
 
     renderer.render(scene, camera);
