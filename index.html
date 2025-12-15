@@ -314,7 +314,41 @@ const videos=[
 ];
 
 const memoryStars=[];
+
 const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
+
+// ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
+const GOLDEN_HEX = 0xffcc66;
+const SHAYARIS = [
+`Tumhare naam se mohabbat ki hai,
+Tumhare ehsaas se mohabbat ki hai,
+Tum paas nahi ho, par phir bhi,
+Tumhari yaad se mohabbat ki hai.`,
+
+`Aankhon mein teri, ek nasha sa hai,
+Jo mere dil ko bekhabar karta hai.`,
+
+`Meri har subah ki pehli soch,
+Aur har raat ka aakhiri khayal ho tum.`,
+
+`Hazaaron rang hain mere dil mein,
+Magar sabse pyaara rang ho tum.`,
+
+`Teri yaadon ki khushboo se mehka hai mera kamra,
+Hum tere naam se hi mehfil saja lete hain.`,
+
+`Teri awaaz, tera chehra, teri har ek baat,
+Sach kahu to meri har khushi ka karan sirf tu hai.`,
+
+`Dil ne har dua mein bas tera hi naam liya,
+Shayad isliye zindagi ne mujhe tu tohfa bana ke diya.`,
+
+`Tu muskuraati hai to lagta hai,
+Mere liye rab se aayi koi dua ho tum.
+Tere bina sab kuchh adhoora sa lagta hai,
+Tu saath ho to har lamha pura sa lagta hai.`
+];
+
 const STAR_RINGS=[
   {radius:1650,count:8},
   {radius:1850,count:9},
@@ -353,7 +387,7 @@ STAR_RINGS.forEach((ring,ri)=>{
 });
 
 
-// Assign shayaris ONLY to golden stars (safe mapping)
+// ===== Assign shayaris ONLY to golden stars (SAFE) =====
 let goldenIndex = 0;
 memoryStars.forEach(star => {
   if (
@@ -366,6 +400,7 @@ memoryStars.forEach(star => {
     goldenIndex++;
   }
 });
+
 
 /* ================= DUST PARTICLES (FULL ORBIT RINGS) ================= */
 const dustGeo=new THREE.BufferGeometry(),dust=[];
@@ -467,39 +502,6 @@ function spawnComet(){
   comets.push(head);
 }
 setInterval(spawnComet,7000);
-
-
-/* ================= SHAYARI DATA (GOLDEN STARS) ================= */
-const GOLDEN_HEX = 0xffcc66;
-const SHAYARIS = [
-`Tumhare naam se mohabbat ki hai,
-Tumhare ehsaas se mohabbat ki hai,
-Tum paas nahi ho, par phir bhi,
-Tumhari yaad se mohabbat ki hai.`,
-
-`Aankhon mein teri, ek nasha sa hai,
-Jo mere dil ko bekhabar karta hai.`,
-
-`Meri har subah ki pehli soch,
-Aur har raat ka aakhiri khayal ho tum.`,
-
-`Hazaaron rang hain mere dil mein,
-Magar sabse pyaara rang ho tum.`,
-
-`Teri yaadon ki khushboo se mehka hai mera kamra,
-Hum tere naam se hi mehfil saja lete hain.`,
-
-`Teri awaaz, tera chehra, teri har ek baat,
-Sach kahu to meri har khushi ka karan sirf tu hai.`,
-
-`Dil ne har dua mein bas tera hi naam liya,
-Shayad isliye zindagi ne mujhe tu tohfa bana ke diya.`,
-
-`Tu muskuraati hai to lagta hai,
-Mere liye rab se aayi koi dua ho tum.
-Tere bina sab kuchh adhoora sa lagta hai,
-Tu saath ho to har lamha pura sa lagta hai.`
-];
 
 /* ================= RAYCAST ================= */
 const raycaster=new THREE.Raycaster();
