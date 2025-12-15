@@ -309,7 +309,7 @@ STAR_RINGS.forEach((ring,ri)=>{
 const dustGeo=new THREE.BufferGeometry(),dust=[];
 
 // Dense dust across ALL orbit rings (360 degrees)
-for(let i=0;i<24000;i++){
+for(let i=0;i<16000;i++){
   const ringRadius = THREE.MathUtils.randFloat(100,1400);
   const angle = Math.random()*Math.PI*2;
   const height = THREE.MathUtils.randFloat(-30,30);
