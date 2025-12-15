@@ -98,7 +98,7 @@ html,body{
   <h3>Star Legend</h3>
   <div><span class="dot blue"></span> Video Memories</div>
   <div><span class="dot gold"></span> Promises</div>
-  <div><span class="dot pink"></span> Shayari & Messages</div>
+  <div><span class="dot pink"></span> Shayaris</div>
   <div><span class="dot green"></span> Voice Notes</div>
   <div><span class="dot purple"></span> Hidden Memories</div>
 </div>
@@ -319,6 +319,7 @@ const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 
 // ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
 const GOLDEN_HEX = 0xffcc66;
+const PINK_HEX = 0xff66aa;
 const SHAYARIS = [
 `Tumhare naam se mohabbat ki hai,
 Tumhare ehsaas se mohabbat ki hai,
@@ -393,7 +394,7 @@ memoryStars.forEach(star => {
   if (
     star.material &&
     star.material.color &&
-    star.material.color.getHex() === GOLDEN_HEX &&
+    star.material.color.getHex() === PINK_HEX &&
     goldenIndex < SHAYARIS.length
   ) {
     star.userData.shayariIndex = goldenIndex;
