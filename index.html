@@ -576,10 +576,13 @@ camera.position.copy(
 );
 
 
-  // ===== Planet readability scale (NASA-style) =====
+  // ===== Planet readability scale (gentle & realistic) =====
   planets.forEach(p=>{
     const d = camera.position.distanceTo(p.mesh.position);
-    const scale = THREE.MathUtils.clamp(d / 180, 1, 3.5);
+
+    // much softer scaling so planets don't become huge
+    const scale = THREE.MathUtils.clamp(d / 420, 1, 1.6);
+
     p.mesh.scale.setScalar(scale);
   });
 
