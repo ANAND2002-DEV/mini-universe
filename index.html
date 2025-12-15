@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mini Universe — MAIN HTML (FINAL PATCH)</title>
+<style>
+html,body{margin:0;padding:0;overflow:hidden;background:black;font-family:Arial,sans-serif;}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:999;}
+.modal-card{background:#0b0b0b;border-radius:16px;padding:22px;max-width:520px;color:#fff;text-align:center;box-shadow:0 0 40px rgba(0,0,0,0.7);}
+.modal-card img,.modal-card video{width:100%;border-radius:12px;}
+.close-btn{margin-top:12px;cursor:pointer;opacity:0.85;}
+.close-btn:hover{opacity:1;}
+#sunModal .modal-card{border:1px solid rgba(255,200,80,0.5);color:#ffd27d;}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+
+<div id="sunModal" class="modal"><div class="modal-card"><h2>🌞 Our First Meeting</h2><p id="meetingText"></p><div class="close-btn" onclick="closeAll()">Close</div></div></div>
+<div id="planetModal" class="modal"><div class="modal-card"><h2 id="planetTitle"></h2><img id="planetImg"><div class="close-btn" onclick="closeAll()">Close</div></div></div>
+<div id="videoModal" class="modal"><div class="modal-card"><video id="videoPlayer" controls autoplay></video><div class="close-btn" onclick="closeAll()">Close</div></div></div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+let currentAudio=null;
+function playAudio(src){stopAudio();currentAudio=new Audio(src);currentAudio.loop=true;currentAudio.volume=0.7;currentAudio.play();}
+function stopAudio(){if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;currentAudio=null;}}
+
+const videoModal=document.getElementById("videoModal");
+const videoPlayer=document.getElementById("videoPlayer");
+function playVideo(src){closeAll();videoPlayer.src=src;videoModal.style.display="flex";videoPlayer.play();}
+function stopVideo(){videoPlayer.pause();videoPlayer.currentTime=0;videoPlayer.src="";}
+
+const FIRST_MEET=new Date("2025-09-27");
+document.getElementById("meetingText").innerHTML=`From our first meet on <b>27 September 2025</b>,<br>our love keeps growing.<br><br>It’s been <b>${Math.floor((Date.now()-FIRST_MEET)/(1000*60*60*24))} days</b>,<br>and our love is still growing 💛`;
+
+let selected=null;
+function closeAll(){
+  stopAudio();stopVideo();selected=null;
+  controls.target.set(0,0,0);
+  zoomTarget=DEFAULT_ZOOM;
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+}
+window.closeAll=closeAll;
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,1,30000);
+camera.position.set(0,180,360);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+scene.add(new THREE.PointLight(0xffffff,2.5,20000));
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enablePan=false;controls.enableZoom=false;controls.enableDamping=true;controls.dampingFactor=0.15;
+
+const DEFAULT_ZOOM=camera.position.length();
+let zoomTarget=DEFAULT_ZOOM;
+let ZOOM_MIN=120, ZOOM_MAX=6000;
+const ZOOM_STEP=120, ZOOM_SMOOTH=0.08;
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  zoomTarget+=Math.sign(e.deltaY)*ZOOM_STEP;
+  zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
+},{passive:false});
+
+const bgGeo=new THREE.BufferGeometry(),bg=[];
+for(let i=0;i<20000;i++){
+  const r=THREE.MathUtils.randFloat(6000,20000),t=Math.random()*Math.PI*2,p=Math.acos(THREE.MathUtils.randFloat(-1,1));
+  bg.push(r*Math.sin(p)*Math.cos(t),r*Math.cos(p),r*Math.sin(p)*Math.sin(t));
+}
+bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
+scene.add(new THREE.Points(bgGeo,new THREE.PointsMaterial({size:1})));
+
+const loader=new THREE.TextureLoader();
+const sun=new THREE.Mesh(new THREE.SphereGeometry(36,64,64),new THREE.MeshStandardMaterial({map:loader.load("./assets/planets/sun.jpg"),emissive:0xffaa00,emissiveIntensity:2}));
+sun.userData.type="sun";scene.add(sun);
+
+/* DISTANCE PATCH: Increased Earth distance from Venus */
+const planetData=[
+ ["Mercury",8,70,1.8,"mercury.jpg","photo01.jpg","star01.mp3"],
+ ["Venus",12,90,1.5,"venus.jpg","photo02.jpg","star02.mp3"],
+ ["Earth",14,140,1.2,"earth.jpg","photo03.jpg","star03.mp3"],
+ ["Mars",12,170,1.0,"mars.jpg","photo04.jpg","star04.mp3"],
+ ["Jupiter",26,230,0.7,"jupiter.jpg","photo05.jpg","star05.mp3"],
+ ["Saturn",24,300,0.45,"saturn.jpg","photo06.jpg","star06.mp3"],
+ ["Uranus",22,360,0.35,"uranus.jpg","photo07.jpg","star07.mp3"],
+ ["Neptune",22,420,0.28,"neptune.jpg","photo08.jpg","star08.mp3"],
+ ["Pluto",10,480,0.22,"pluto.jpg","photo09.jpg","star09.mp3"],
+ ["Eris",10,540,0.18,"eris.jpg","photo10.jpg","star10.mp3"]
+];
+
+const planets=[];
+planetData.forEach(p=>{
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(p[1],48,48),new THREE.MeshStandardMaterial({map:loader.load("./assets/planets/"+p[4])}));
+  mesh.userData={type:"planet",info:{name:p[0],photo:p[5],audio:p[6],dist:p[2]}};
+  scene.add(mesh);
+  planets.push({mesh,angle:Math.random()*Math.PI*2,dist:p[2],speed:p[3]});
+});
+
+planetData.forEach(p=>{
+  const curve=new THREE.EllipseCurve(0,0,p[2],p[2],0,Math.PI*2);
+  const pts=curve.getPoints(180);
+  const geo=new THREE.BufferGeometry().setFromPoints(pts.map(pt=>new THREE.Vector3(pt.x,0,pt.y)));
+  scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({opacity:0.12,transparent:true})));
+});
+
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+
+window.addEventListener("click",(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects([sun,...planets.map(p=>p.mesh)],true);
+  if(hits.length){
+    const obj=hits[0].object;
+    if(obj.userData.type==="sun"){closeAll();document.getElementById("sunModal").style.display="flex";return;}
+    selected=obj;
+    ZOOM_MIN=60;ZOOM_MAX=3000;
+    zoomTarget=obj.userData.info.dist*1.2;
+  }else{
+    closeAll();ZOOM_MIN=120;ZOOM_MAX=6000;
+  }
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  planets.forEach(p=>{p.angle+=0.00035*p.speed;p.mesh.position.set(Math.cos(p.angle)*p.dist,0,Math.sin(p.angle)*p.dist);});
+  if(selected) controls.target.copy(selected.position);
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const dist=camera.position.distanceTo(controls.target);
+  camera.position.copy(controls.target.clone().add(dir.multiplyScalar(THREE.MathUtils.lerp(dist,zoomTarget,ZOOM_SMOOTH))));
+  controls.update();renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
