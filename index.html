@@ -157,6 +157,18 @@ controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
 controls.dampingFactor=0.15;
+/* ================= ZOOM ================= */
+let zoomTarget = camera.position.distanceTo(controls.target);
+let ZOOM_MIN = 120;
+let ZOOM_MAX = 6000;
+const ZOOM_STEP = 120;
+const ZOOM_SMOOTH = 0.08;
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  zoomTarget += Math.sign(e.deltaY) * ZOOM_STEP;
+  zoomTarget = THREE.MathUtils.clamp(zoomTarget, ZOOM_MIN, ZOOM_MAX);
+},{passive:false});
 
 /* ================= BACKGROUND STARS ================= */
 const bgGeo=new THREE.BufferGeometry(),bg=[];
@@ -482,8 +494,23 @@ function animate(){
     controls.target.copy(selected.position);
   }
 
-  controls.update();
-  renderer.render(scene,camera);
+const dir = camera.position.clone()
+  .sub(controls.target)
+  .normalize();
+
+const dist = camera.position.distanceTo(controls.target);
+
+camera.position.copy(
+  controls.target.clone().add(
+    dir.multiplyScalar(
+      THREE.MathUtils.lerp(dist, zoomTarget, ZOOM_SMOOTH)
+    )
+  )
+);
+
+controls.update();
+renderer.render(scene,camera);
+
 }
 animate();
 
