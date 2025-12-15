@@ -111,9 +111,12 @@ function updateMeeting(){
 }
 updateMeeting();
 
-/* ================= MODAL ================= */
+/* ================= MODAL CLOSE (FIXED) ================= */
+let selected=null;
 function closeAll(){
   stopAudio();
+  selected=null;
+  controls.target.set(0,0,0);
   document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 window.closeAll=closeAll;
@@ -288,7 +291,6 @@ function spawnComet(){
     THREE.MathUtils.randFloat(-2200,2200)
   );
   head.velocity=head.position.clone().normalize().multiplyScalar(-THREE.MathUtils.randFloat(8,14));
-  head.tail=tail;
   scene.add(head);
   comets.push(head);
 }
@@ -297,9 +299,8 @@ setInterval(spawnComet,7000);
 /* ================= RAYCAST ================= */
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
-let selected=null;
 
-/* ---- SINGLE CLICK (ZOOM ONLY) ---- */
+/* ---- SINGLE CLICK (ZOOM / SUN FIXED) ---- */
 window.addEventListener("click",(e)=>{
   if(isDragging) return;
 
@@ -315,17 +316,17 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
     if(obj.userData.type==="sun"){
+      closeAll();
       document.getElementById("sunModal").style.display="flex";
-      selected=null;
       return;
     }
+
     selected=obj;
     zoomTarget=obj.position.length()*0.9;
     ZOOM_MIN=60;
     ZOOM_MAX=3000;
   }else{
-    selected=null;
-    controls.target.set(0,0,0);
+    closeAll();
     ZOOM_MIN=120;
     ZOOM_MAX=6000;
   }
@@ -364,9 +365,9 @@ function animate(){
 
   comets.forEach((c,i)=>{
     c.position.add(c.velocity);
-    c.tail.material.opacity-=0.003;
     c.velocity.add(c.position.clone().multiplyScalar(-0.00002));
-    if(c.tail.material.opacity<=0){
+    c.children[0].material.opacity-=0.003;
+    if(c.children[0].material.opacity<=0){
       scene.remove(c);
       comets.splice(i,1);
     }
