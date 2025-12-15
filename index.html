@@ -1,11 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Mini Universe – Main Base + Star Base (Fixed)</title>
+<meta charset="UTF-8">
+<title>Mini Universe – MAIN BASE (Complete)</title>
 
 <style>
-  body { margin:0; overflow:hidden; background:black; }
+  body { margin:0; overflow:hidden; background:black; font-family:Arial,sans-serif; }
+
+  /* ===== SUN MEMORY MODAL ===== */
+  #memoryModal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal-card{
+    background:#0b0b0b;
+    border:1px solid rgba(255,200,80,0.4);
+    border-radius:16px;
+    padding:28px 32px;
+    max-width:420px;
+    text-align:center;
+    color:#ffd27d;
+    box-shadow:0 0 40px rgba(255,170,0,0.25);
+  }
+  .modal-card h2{
+    margin:0 0 14px;
+    font-weight:600;
+    color:#ffcc66;
+  }
+  .modal-card p{
+    line-height:1.7;
+    font-size:16px;
+    color:#ffe4a8;
+  }
+  .close-btn{
+    margin-top:18px;
+    cursor:pointer;
+    color:#ffcc66;
+    font-size:14px;
+    opacity:0.85;
+  }
+  .close-btn:hover{ opacity:1; }
 </style>
 
 <script type="importmap">
@@ -18,10 +57,44 @@
 </head>
 
 <body>
+
+<!-- ===== SUN MEMORY MODAL ===== -->
+<div id="memoryModal">
+  <div class="modal-card">
+    <h2>🌞 Our First Meeting</h2>
+    <p id="meetingText"></p>
+    <div class="close-btn" onclick="closeModal()">Close</div>
+  </div>
+</div>
+
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from
 "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+/* ================= SUN MEMORY LOGIC ================= */
+const FIRST_MEET_DATE = new Date("2025-09-27");
+
+function daysSince(){
+  return Math.floor((new Date() - FIRST_MEET_DATE) / (1000*60*60*24));
+}
+function updateMeetingText(){
+  document.getElementById("meetingText").innerHTML = `
+    From our first meet on <b>27 September 2025</b>,<br>
+    our love keeps growing.<br><br>
+    It’s been <b>${daysSince()} days</b>,<br>
+    and our love is still growing 💛
+  `;
+}
+updateMeetingText();
+
+window.closeModal = ()=>{
+  document.getElementById("memoryModal").style.display="none";
+};
+function openSunMemory(){
+  updateMeetingText();
+  document.getElementById("memoryModal").style.display="flex";
+}
 
 /* ================= SCENE ================= */
 const scene = new THREE.Scene();
@@ -42,11 +115,11 @@ scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
 /* ================= CONTROLS ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enablePan = false;
-controls.enableZoom = false;
-controls.enableDamping = true;
-controls.dampingFactor = 0.15;
-controls.rotateSpeed = 0.35;
+controls.enablePan=false;
+controls.enableZoom=false;
+controls.enableDamping=true;
+controls.dampingFactor=0.15;
+controls.rotateSpeed=0.35;
 
 /* ================= DRAG TRACK ================= */
 let isDragging=false;
@@ -93,6 +166,7 @@ const sun=new THREE.Mesh(
     emissiveIntensity:2
   })
 );
+sun.userData.type="sun";
 scene.add(sun);
 
 /* ================= PLANETS ================= */
@@ -141,11 +215,10 @@ planetData.forEach(p=>{
 /* ================= MEMORY STARS ================= */
 const memoryStars=[];
 const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
-
 const STAR_RINGS=[
-  { radius:720, count:8 },
-  { radius:900, count:9 },
-  { radius:1150, count:8 }
+  {radius:720,count:8},
+  {radius:900,count:9},
+  {radius:1150,count:8}
 ];
 
 STAR_RINGS.forEach((ring,ri)=>{
@@ -175,28 +248,65 @@ STAR_RINGS.forEach((ring,ri)=>{
   }
 });
 
-/* ================= SELECTION (FIXED) ================= */
+/* ================= COMETS ================= */
+const comets=[];
+function spawnComet(){
+  const head=new THREE.Mesh(
+    new THREE.SphereGeometry(2.5,16,16),
+    new THREE.MeshBasicMaterial({ color:0xffffff })
+  );
+  const tailGeo=new THREE.BufferGeometry();
+  const tailPos=[];
+  for(let i=0;i<100;i++) tailPos.push(0,0,-i*3);
+  tailGeo.setAttribute("position",new THREE.Float32BufferAttribute(tailPos,3));
+  const tail=new THREE.Points(
+    tailGeo,
+    new THREE.PointsMaterial({
+      color:0x88ccff,
+      size:2,
+      opacity:0.9,
+      transparent:true,
+      depthWrite:false
+    })
+  );
+  head.add(tail);
+  head.position.set(
+    THREE.MathUtils.randFloat(-2200,2200),
+    THREE.MathUtils.randFloat(-900,900),
+    THREE.MathUtils.randFloat(-2200,2200)
+  );
+  head.velocity=head.position.clone().normalize().multiplyScalar(-THREE.MathUtils.randFloat(8,14));
+  head.tail=tail;
+  scene.add(head);
+  comets.push(head);
+}
+setInterval(spawnComet,7000);
+
+/* ================= RAYCAST ================= */
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
 let selected=null;
 
 window.addEventListener("click",(e)=>{
   if(isDragging) return;
-
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
 
   const hits=raycaster.intersectObjects(
-    [...planets.map(p=>p.mesh), ...memoryStars],
+    [sun, ...planets.map(p=>p.mesh), ...memoryStars],
     true
   );
 
   if(hits.length){
     let obj=hits[0].object;
-
-    // resolve hit-area
     if(obj.userData.type==="starHit") obj=obj.parent;
+
+    if(obj.userData.type==="sun"){
+      openSunMemory();
+      selected=null;
+      return;
+    }
 
     selected=obj;
     zoomTarget=obj.position.length()*0.9;
@@ -227,6 +337,16 @@ function animate(){
     s.scale.setScalar(1+Math.sin(Date.now()*0.002+s.position.x)*0.15);
   });
 
+  comets.forEach((c,i)=>{
+    c.position.add(c.velocity);
+    c.tail.material.opacity-=0.003;
+    c.velocity.add(c.position.clone().multiplyScalar(-0.00002));
+    if(c.tail.material.opacity<=0){
+      scene.remove(c);
+      comets.splice(i,1);
+    }
+  });
+
   if(selected){
     controls.target.copy(selected.position);
   }
@@ -252,5 +372,7 @@ window.addEventListener("resize",()=>{
   renderer.setSize(innerWidth,innerHeight);
 });
 </script>
+
 </body>
 </html>
+
