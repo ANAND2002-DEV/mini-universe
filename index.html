@@ -203,16 +203,16 @@ scene.add(sun);
 
 /* ================= PLANETS ================= */
 const planetData=[
- ["Mercury",8,90,1.6,"mercury.jpg","photo01.jpg","star01.mp3"],
- ["Venus",12,140,1.35,"venus.jpg","photo02.jpg","star02.mp3"],
- ["Earth",14,190,1.1,"earth.jpg","photo03.jpg","star03.mp3"],
- ["Mars",12,240,0.95,"mars.jpg","photo04.jpg","star04.mp3"],
- ["Jupiter",26,320,0.6,"jupiter.jpg","photo05.jpg","star05.mp3"],
- ["Saturn",24,420,0.38,"saturn.jpg","photo06.jpg","star06.mp3"],
- ["Uranus",22,520,0.30,"uranus.jpg","photo07.jpg","star07.mp3"],
- ["Neptune",22,620,0.24,"neptune.jpg","photo08.jpg","star08.mp3"],
- ["Pluto",10,720,0.20,"pluto.jpg","photo09.jpg","star09.mp3"],
- ["Eris",10,820,0.16,"eris.jpg","photo10.jpg","star10.mp3"]
+ ["Mercury",8,120,1.6,"mercury.jpg","photo01.jpg","star01.mp3"],
+ ["Venus",12,190,1.35,"venus.jpg","photo02.jpg","star02.mp3"],
+ ["Earth",14,260,1.1,"earth.jpg","photo03.jpg","star03.mp3"],
+ ["Mars",12,340,0.95,"mars.jpg","photo04.jpg","star04.mp3"],
+ ["Jupiter",26,480,0.6,"jupiter.jpg","photo05.jpg","star05.mp3"],
+ ["Saturn",24,640,0.38,"saturn.jpg","photo06.jpg","star06.mp3"],
+ ["Uranus",22,820,0.30,"uranus.jpg","photo07.jpg","star07.mp3"],
+ ["Neptune",22,980,0.24,"neptune.jpg","photo08.jpg","star08.mp3"],
+ ["Pluto",10,1140,0.20,"pluto.jpg","photo09.jpg","star09.mp3"],
+ ["Eris",10,1300,0.16,"eris.jpg","photo10.jpg","star10.mp3"]
 ];
 
 const planets=[];
@@ -472,7 +472,7 @@ function animate(){
     p.angle+=0.00035*p.speed;
     p.mesh.position.set(
       Math.cos(p.angle)*p.dist,
-      0,
+      (p.dist % 2 === 0 ? 10 : -10),
       Math.sin(p.angle)*p.dist
     );
   });
