@@ -1,50 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Mini Universe – MAIN BASE (Complete)</title>
+<meta charset="UTF-8" />
+<title>Mini Universe — FINAL MAIN BASE</title>
 
 <style>
-  body { margin:0; overflow:hidden; background:black; font-family:Arial,sans-serif; }
+body {
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family: Arial, sans-serif;
+}
 
-  /* ===== SUN MEMORY MODAL ===== */
-  #memoryModal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.75);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:50;
-  }
-  .modal-card{
-    background:#0b0b0b;
-    border:1px solid rgba(255,200,80,0.4);
-    border-radius:16px;
-    padding:28px 32px;
-    max-width:420px;
-    text-align:center;
-    color:#ffd27d;
-    box-shadow:0 0 40px rgba(255,170,0,0.25);
-  }
-  .modal-card h2{
-    margin:0 0 14px;
-    font-weight:600;
-    color:#ffcc66;
-  }
-  .modal-card p{
-    line-height:1.7;
-    font-size:16px;
-    color:#ffe4a8;
-  }
-  .close-btn{
-    margin-top:18px;
-    cursor:pointer;
-    color:#ffcc66;
-    font-size:14px;
-    opacity:0.85;
-  }
-  .close-btn:hover{ opacity:1; }
+/* ===== MODALS ===== */
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:100;
+}
+.modal-card{
+  background:#0b0b0b;
+  border-radius:16px;
+  padding:24px;
+  max-width:420px;
+  text-align:center;
+  color:#fff;
+  box-shadow:0 0 40px rgba(0,0,0,0.7);
+}
+.modal-card img{
+  width:100%;
+  border-radius:12px;
+  margin-bottom:12px;
+}
+.close-btn{
+  cursor:pointer;
+  opacity:0.8;
+  margin-top:10px;
+}
+.close-btn:hover{ opacity:1; }
+
+#sunModal .modal-card{
+  border:1px solid rgba(255,200,80,0.5);
+  color:#ffd27d;
+}
 </style>
 
 <script type="importmap">
@@ -58,12 +60,21 @@
 
 <body>
 
-<!-- ===== SUN MEMORY MODAL ===== -->
-<div id="memoryModal">
+<!-- 🌞 SUN MEMORY -->
+<div id="sunModal" class="modal">
   <div class="modal-card">
     <h2>🌞 Our First Meeting</h2>
     <p id="meetingText"></p>
-    <div class="close-btn" onclick="closeModal()">Close</div>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+<!-- 🪐 PLANET PHOTO -->
+<div id="planetModal" class="modal">
+  <div class="modal-card">
+    <h2 id="planetTitle"></h2>
+    <img id="planetImg">
+    <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
 
@@ -72,29 +83,24 @@ import * as THREE from "three";
 import { OrbitControls } from
 "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-/* ================= SUN MEMORY LOGIC ================= */
+/* ================= SUN MEMORY ================= */
 const FIRST_MEET_DATE = new Date("2025-09-27");
-
 function daysSince(){
-  return Math.floor((new Date() - FIRST_MEET_DATE) / (1000*60*60*24));
+  return Math.floor((new Date() - FIRST_MEET_DATE)/(1000*60*60*24));
 }
-function updateMeetingText(){
-  document.getElementById("meetingText").innerHTML = `
-    From our first meet on <b>27 September 2025</b>,<br>
-    our love keeps growing.<br><br>
-    It’s been <b>${daysSince()} days</b>,<br>
-    and our love is still growing 💛
-  `;
+function updateMeeting(){
+  document.getElementById("meetingText").innerHTML =
+    `From our first meet on <b>27 September 2025</b>,<br>
+     our love keeps growing.<br><br>
+     It’s been <b>${daysSince()} days</b>,<br>
+     and our love is still growing 💛`;
 }
-updateMeetingText();
+updateMeeting();
 
-window.closeModal = ()=>{
-  document.getElementById("memoryModal").style.display="none";
-};
-function openSunMemory(){
-  updateMeetingText();
-  document.getElementById("memoryModal").style.display="flex";
+function closeAll(){
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
+window.closeAll = closeAll;
 
 /* ================= SCENE ================= */
 const scene = new THREE.Scene();
@@ -113,32 +119,32 @@ document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
-/* ================= CONTROLS ================= */
+/* ================= CONTROLS (NASA-EYES STYLE) ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enablePan=false;
-controls.enableZoom=false;
-controls.enableDamping=true;
-controls.dampingFactor=0.15;
-controls.rotateSpeed=0.35;
+controls.enablePan = false;
+controls.enableZoom = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.15;
+controls.rotateSpeed = 0.35;
 
-/* ================= DRAG TRACK ================= */
+/* ================= DRAG DETECT ================= */
 let isDragging=false;
 renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
 renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ================= CUSTOM ZOOM ================= */
-let zoomTarget=camera.position.distanceTo(controls.target);
+let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN=120, ZOOM_MAX=6000;
 const ZOOM_STEP=120, ZOOM_SMOOTH=0.08;
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  zoomTarget+=Math.sign(e.deltaY)*ZOOM_STEP;
-  zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
+  zoomTarget += Math.sign(e.deltaY)*ZOOM_STEP;
+  zoomTarget = THREE.MathUtils.clamp(zoomTarget, ZOOM_MIN, ZOOM_MAX);
 },{passive:false});
 
 /* ================= BACKGROUND STARS ================= */
-const bgGeo=new THREE.BufferGeometry();
+const bgGeo = new THREE.BufferGeometry();
 const bg=[];
 for(let i=0;i<18000;i++){
   const r=THREE.MathUtils.randFloat(6000,20000);
@@ -150,18 +156,18 @@ for(let i=0;i<18000;i++){
     r*Math.sin(p)*Math.sin(t)
   );
 }
-bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
+bgGeo.setAttribute("position", new THREE.Float32BufferAttribute(bg,3));
 scene.add(new THREE.Points(
   bgGeo,
   new THREE.PointsMaterial({ color:0xffffff, size:1 })
 ));
 
 /* ================= SUN ================= */
-const loader=new THREE.TextureLoader();
-const sun=new THREE.Mesh(
+const loader = new THREE.TextureLoader();
+const sun = new THREE.Mesh(
   new THREE.SphereGeometry(36,64,64),
   new THREE.MeshStandardMaterial({
-    map:loader.load("./assets/planets/sun.jpg"),
+    map: loader.load("./assets/planets/sun.jpg"),
     emissive:0xffaa00,
     emissiveIntensity:2
   })
@@ -171,32 +177,31 @@ scene.add(sun);
 
 /* ================= PLANETS ================= */
 const planetData=[
-  {size:8,dist:70,speed:1.8,tex:"mercury.jpg"},
-  {size:12,dist:95,speed:1.5,tex:"venus.jpg"},
-  {size:14,dist:120,speed:1.2,tex:"earth.jpg"},
-  {size:12,dist:150,speed:1.0,tex:"mars.jpg"},
-  {size:26,dist:200,speed:0.7,tex:"jupiter.jpg"},
-  {size:24,dist:260,speed:0.45,tex:"saturn.jpg"},
-  {size:22,dist:320,speed:0.35,tex:"uranus.jpg"},
-  {size:22,dist:380,speed:0.28,tex:"neptune.jpg"},
-  {size:10,dist:440,speed:0.22,tex:"pluto.jpg"},
-  {size:10,dist:500,speed:0.18,tex:"eris.jpg"},
-  {size:16,dist:560,speed:0.14,tex:"exoplanet.jpg"}
+ {name:"Mercury",size:8,dist:70,speed:1.8,tex:"mercury.jpg",photo:"photo01.jpg"},
+ {name:"Venus",size:12,dist:95,speed:1.5,tex:"venus.jpg",photo:"photo02.jpg"},
+ {name:"Earth",size:14,dist:120,speed:1.2,tex:"earth.jpg",photo:"photo03.jpg"},
+ {name:"Mars",size:12,dist:150,speed:1.0,tex:"mars.jpg",photo:"photo04.jpg"},
+ {name:"Jupiter",size:26,dist:200,speed:0.7,tex:"jupiter.jpg",photo:"photo05.jpg"},
+ {name:"Saturn",size:24,dist:260,speed:0.45,tex:"saturn.jpg",photo:"photo06.jpg"},
+ {name:"Uranus",size:22,dist:320,speed:0.35,tex:"uranus.jpg",photo:"photo07.jpg"},
+ {name:"Neptune",size:22,dist:380,speed:0.28,tex:"neptune.jpg",photo:"photo08.jpg"},
+ {name:"Pluto",size:10,dist:440,speed:0.22,tex:"pluto.jpg",photo:"photo09.jpg"},
+ {name:"Eris",size:10,dist:500,speed:0.18,tex:"eris.jpg",photo:"photo10.jpg"}
 ];
 
 const planets=[];
 const ORBIT_SPEED=0.00035;
 
 planetData.forEach(p=>{
-  const mesh=new THREE.Mesh(
+  const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(p.size,48,48),
     new THREE.MeshStandardMaterial({
-      map:loader.load("./assets/planets/"+p.tex)
+      map: loader.load("./assets/planets/"+p.tex)
     })
   );
-  mesh.userData.type="planet";
+  mesh.userData={ type:"planet", info:p };
   scene.add(mesh);
-  planets.push({...p,mesh,angle:Math.random()*Math.PI*2});
+  planets.push({ ...p, mesh, angle:Math.random()*Math.PI*2 });
 });
 
 /* ================= ORBIT RINGS ================= */
@@ -212,7 +217,7 @@ planetData.forEach(p=>{
   ));
 });
 
-/* ================= MEMORY STARS ================= */
+/* ================= MEMORY STARS (RINGS) ================= */
 const memoryStars=[];
 const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 const STAR_RINGS=[
@@ -248,6 +253,29 @@ STAR_RINGS.forEach((ring,ri)=>{
   }
 });
 
+/* ================= DUST ================= */
+const dustGeo=new THREE.BufferGeometry();
+const dust=[];
+for(let i=0;i<9000;i++){
+  const r=THREE.MathUtils.randFloat(80,650);
+  const a=Math.random()*Math.PI*2;
+  dust.push(
+    Math.cos(a)*r,
+    THREE.MathUtils.randFloat(-12,12),
+    Math.sin(a)*r
+  );
+}
+dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
+scene.add(new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({
+    size:0.7,
+    opacity:0.35,
+    transparent:true,
+    depthWrite:false
+  })
+));
+
 /* ================= COMETS ================= */
 const comets=[];
 function spawnComet(){
@@ -255,9 +283,9 @@ function spawnComet(){
     new THREE.SphereGeometry(2.5,16,16),
     new THREE.MeshBasicMaterial({ color:0xffffff })
   );
-  const tailGeo=new THREE.BufferGeometry();
   const tailPos=[];
   for(let i=0;i<100;i++) tailPos.push(0,0,-i*3);
+  const tailGeo=new THREE.BufferGeometry();
   tailGeo.setAttribute("position",new THREE.Float32BufferAttribute(tailPos,3));
   const tail=new THREE.Points(
     tailGeo,
@@ -289,6 +317,7 @@ let selected=null;
 
 window.addEventListener("click",(e)=>{
   if(isDragging) return;
+
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
@@ -303,7 +332,7 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
     if(obj.userData.type==="sun"){
-      openSunMemory();
+      document.getElementById("sunModal").style.display="flex";
       selected=null;
       return;
     }
@@ -312,6 +341,13 @@ window.addEventListener("click",(e)=>{
     zoomTarget=obj.position.length()*0.9;
     ZOOM_MIN=60;
     ZOOM_MAX=3000;
+
+    if(obj.userData.type==="planet"){
+      const info=obj.userData.info;
+      document.getElementById("planetTitle").innerText=info.name;
+      document.getElementById("planetImg").src="./assets/photos/"+info.photo;
+      document.getElementById("planetModal").style.display="flex";
+    }
   } else {
     selected=null;
     controls.target.set(0,0,0);
@@ -320,7 +356,7 @@ window.addEventListener("click",(e)=>{
   }
 });
 
-/* ================= LOOP ================= */
+/* ================= ANIMATION LOOP ================= */
 function animate(){
   requestAnimationFrame(animate);
 
@@ -372,7 +408,5 @@ window.addEventListener("resize",()=>{
   renderer.setSize(innerWidth,innerHeight);
 });
 </script>
-
 </body>
 </html>
-
