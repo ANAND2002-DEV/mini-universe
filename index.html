@@ -305,18 +305,33 @@ STAR_RINGS.forEach((ring,ri)=>{
   }
 });
 
-/* ================= DUST PARTICLES ================= */
+/* ================= DUST PARTICLES (FULL ORBIT RINGS) ================= */
 const dustGeo=new THREE.BufferGeometry(),dust=[];
-for(let i=0;i<12000;i++){
-  const r=THREE.MathUtils.randFloat(80,650);
-  const a=Math.random()*Math.PI*2;
+
+// Dense dust across ALL orbit rings (360 degrees)
+for(let i=0;i<24000;i++){
+  const ringRadius = THREE.MathUtils.randFloat(100,1400);
+  const angle = Math.random()*Math.PI*2;
+  const height = THREE.MathUtils.randFloat(-30,30);
+
   dust.push(
-    Math.cos(a)*r,
-    THREE.MathUtils.randFloat(-14,14),
-    Math.sin(a)*r
+    Math.cos(angle)*ringRadius,
+    height,
+    Math.sin(angle)*ringRadius
   );
 }
+
 dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
+scene.add(new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({
+    size:0.9,
+    opacity:0.45,
+    transparent:true,
+    depthWrite:false
+  })
+));
+
 scene.add(new THREE.Points(
   dustGeo,
   new THREE.PointsMaterial({
