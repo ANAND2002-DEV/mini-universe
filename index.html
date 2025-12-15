@@ -430,7 +430,7 @@ window.addEventListener("click",(e)=>{
     ZOOM_MAX = 3000;
   }else{
     closeAll();
-    zoomTarget = camera.position.distanceTo(controls.target) || zoomTarget;
+    zoomTarget = camera.position.distanceTo(controls.target);
     ZOOM_MIN = 120;
     ZOOM_MAX = 6000;
   }
