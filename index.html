@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Main Base + Star Rings</title>
+<title>Mini Universe – Main Base + Star Base (Fixed)</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -49,56 +49,54 @@ controls.dampingFactor = 0.15;
 controls.rotateSpeed = 0.35;
 
 /* ================= DRAG TRACK ================= */
-let isDragging = false;
+let isDragging=false;
 renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
 renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ================= CUSTOM ZOOM ================= */
-let zoomTarget = camera.position.distanceTo(controls.target);
-let ZOOM_MIN = 120;
-let ZOOM_MAX = 6000;
-const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
+let zoomTarget=camera.position.distanceTo(controls.target);
+let ZOOM_MIN=120, ZOOM_MAX=6000;
+const ZOOM_STEP=120, ZOOM_SMOOTH=0.08;
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  zoomTarget += Math.sign(e.deltaY) * ZOOM_STEP;
-  zoomTarget = THREE.MathUtils.clamp(zoomTarget, ZOOM_MIN, ZOOM_MAX);
-},{ passive:false });
+  zoomTarget+=Math.sign(e.deltaY)*ZOOM_STEP;
+  zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
+},{passive:false});
 
 /* ================= BACKGROUND STARS ================= */
-const bgGeo = new THREE.BufferGeometry();
-const bg = [];
+const bgGeo=new THREE.BufferGeometry();
+const bg=[];
 for(let i=0;i<18000;i++){
-  const r = THREE.MathUtils.randFloat(6000,20000);
-  const t = Math.random()*Math.PI*2;
-  const p = Math.acos(THREE.MathUtils.randFloat(-1,1));
+  const r=THREE.MathUtils.randFloat(6000,20000);
+  const t=Math.random()*Math.PI*2;
+  const p=Math.acos(THREE.MathUtils.randFloat(-1,1));
   bg.push(
     r*Math.sin(p)*Math.cos(t),
     r*Math.cos(p),
     r*Math.sin(p)*Math.sin(t)
   );
 }
-bgGeo.setAttribute("position", new THREE.Float32BufferAttribute(bg,3));
+bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
 scene.add(new THREE.Points(
   bgGeo,
   new THREE.PointsMaterial({ color:0xffffff, size:1 })
 ));
 
 /* ================= SUN ================= */
-const loader = new THREE.TextureLoader();
-const sun = new THREE.Mesh(
+const loader=new THREE.TextureLoader();
+const sun=new THREE.Mesh(
   new THREE.SphereGeometry(36,64,64),
   new THREE.MeshStandardMaterial({
-    map: loader.load("./assets/planets/sun.jpg"),
-    emissive: 0xffaa00,
-    emissiveIntensity: 2
+    map:loader.load("./assets/planets/sun.jpg"),
+    emissive:0xffaa00,
+    emissiveIntensity:2
   })
 );
 scene.add(sun);
 
 /* ================= PLANETS ================= */
-const planetData = [
+const planetData=[
   {size:8,dist:70,speed:1.8,tex:"mercury.jpg"},
   {size:12,dist:95,speed:1.5,tex:"venus.jpg"},
   {size:14,dist:120,speed:1.2,tex:"earth.jpg"},
@@ -112,25 +110,26 @@ const planetData = [
   {size:16,dist:560,speed:0.14,tex:"exoplanet.jpg"}
 ];
 
-const planets = [];
-const ORBIT_SPEED = 0.00035;
+const planets=[];
+const ORBIT_SPEED=0.00035;
 
 planetData.forEach(p=>{
-  const mesh = new THREE.Mesh(
+  const mesh=new THREE.Mesh(
     new THREE.SphereGeometry(p.size,48,48),
     new THREE.MeshStandardMaterial({
-      map: loader.load("./assets/planets/"+p.tex)
+      map:loader.load("./assets/planets/"+p.tex)
     })
   );
+  mesh.userData.type="planet";
   scene.add(mesh);
   planets.push({...p,mesh,angle:Math.random()*Math.PI*2});
 });
 
 /* ================= ORBIT RINGS ================= */
 planetData.forEach(p=>{
-  const curve = new THREE.EllipseCurve(0,0,p.dist,p.dist,0,Math.PI*2);
-  const pts = curve.getPoints(160);
-  const geo = new THREE.BufferGeometry().setFromPoints(
+  const curve=new THREE.EllipseCurve(0,0,p.dist,p.dist,0,Math.PI*2);
+  const pts=curve.getPoints(160);
+  const geo=new THREE.BufferGeometry().setFromPoints(
     pts.map(pt=>new THREE.Vector3(pt.x,0,pt.y))
   );
   scene.add(new THREE.Line(
@@ -139,78 +138,75 @@ planetData.forEach(p=>{
   ));
 });
 
-/* ================= MEMORY STAR RINGS ================= */
-const memoryStars = [];
-const STAR_COLORS = [
-  0x66ccff, 0xffcc66, 0xff66aa,
-  0x66ffaa, 0xcc66ff
+/* ================= MEMORY STARS ================= */
+const memoryStars=[];
+const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
+
+const STAR_RINGS=[
+  { radius:720, count:8 },
+  { radius:900, count:9 },
+  { radius:1150, count:8 }
 ];
 
-const STAR_RINGS = [
-  { radius: 720, count: 8 },
-  { radius: 900, count: 9 },
-  { radius: 1150, count: 8 }
-];
-
-STAR_RINGS.forEach((ring, ringIndex)=>{
+STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
-    const color = STAR_COLORS[(i+ringIndex)%STAR_COLORS.length];
-
-    const visibleStar = new THREE.Mesh(
+    const star=new THREE.Mesh(
       new THREE.SphereGeometry(8,20,20),
-      new THREE.MeshBasicMaterial({ color })
+      new THREE.MeshBasicMaterial({ color:STAR_COLORS[(i+ri)%STAR_COLORS.length] })
     );
+    star.userData.type="star";
 
-    // invisible hit area (easy click)
-    const hitArea = new THREE.Mesh(
+    const hit=new THREE.Mesh(
       new THREE.SphereGeometry(18,16,16),
       new THREE.MeshBasicMaterial({ visible:false })
     );
-    visibleStar.add(hitArea);
+    hit.userData.type="starHit";
+    star.add(hit);
 
-    const angle = (i / ring.count) * Math.PI * 2;
-    visibleStar.position.set(
-      Math.cos(angle) * ring.radius,
+    const a=(i/ring.count)*Math.PI*2;
+    star.position.set(
+      Math.cos(a)*ring.radius,
       THREE.MathUtils.randFloat(-40,40),
-      Math.sin(angle) * ring.radius
+      Math.sin(a)*ring.radius
     );
 
-    visibleStar.userData.isMemoryStar = true;
-    visibleStar.userData.baseScale = 1;
-
-    scene.add(visibleStar);
-    memoryStars.push(visibleStar);
+    scene.add(star);
+    memoryStars.push(star);
   }
 });
 
-/* ================= SELECTION ================= */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let selected = null;
+/* ================= SELECTION (FIXED) ================= */
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+let selected=null;
 
 window.addEventListener("click",(e)=>{
   if(isDragging) return;
 
-  mouse.x = (e.clientX/innerWidth)*2-1;
-  mouse.y = -(e.clientY/innerHeight)*2+1;
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
 
-  const clickable = [
-    ...planets.map(p=>p.mesh),
-    ...memoryStars
-  ];
+  const hits=raycaster.intersectObjects(
+    [...planets.map(p=>p.mesh), ...memoryStars],
+    true
+  );
 
-  const hits = raycaster.intersectObjects(clickable,true);
   if(hits.length){
-    selected = hits[0].object.parent || hits[0].object;
-    zoomTarget = selected.position.length() * 0.9;
-    ZOOM_MIN = 60;
-    ZOOM_MAX = 3000;
+    let obj=hits[0].object;
+
+    // resolve hit-area
+    if(obj.userData.type==="starHit") obj=obj.parent;
+
+    selected=obj;
+    zoomTarget=obj.position.length()*0.9;
+    ZOOM_MIN=60;
+    ZOOM_MAX=3000;
   } else {
-    selected = null;
+    selected=null;
     controls.target.set(0,0,0);
-    ZOOM_MIN = 120;
-    ZOOM_MAX = 6000;
+    ZOOM_MIN=120;
+    ZOOM_MAX=6000;
   }
 });
 
@@ -219,7 +215,7 @@ function animate(){
   requestAnimationFrame(animate);
 
   planets.forEach(p=>{
-    p.angle += ORBIT_SPEED * p.speed;
+    p.angle+=ORBIT_SPEED*p.speed;
     p.mesh.position.set(
       Math.cos(p.angle)*p.dist,
       0,
@@ -228,21 +224,19 @@ function animate(){
   });
 
   memoryStars.forEach(s=>{
-    s.scale.setScalar(
-      1 + Math.sin(Date.now()*0.002 + s.position.x)*0.15
-    );
+    s.scale.setScalar(1+Math.sin(Date.now()*0.002+s.position.x)*0.15);
   });
 
   if(selected){
     controls.target.copy(selected.position);
   }
 
-  const dir = camera.position.clone().sub(controls.target).normalize();
-  const dist = camera.position.distanceTo(controls.target);
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const dist=camera.position.distanceTo(controls.target);
   camera.position.copy(
     controls.target.clone().add(
       dir.multiplyScalar(
-        THREE.MathUtils.lerp(dist, zoomTarget, ZOOM_SMOOTH)
+        THREE.MathUtils.lerp(dist,zoomTarget,ZOOM_SMOOTH)
       )
     )
   );
@@ -253,7 +247,7 @@ function animate(){
 animate();
 
 window.addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight;
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
