@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mini Universe – Final Stable</title>
+<title>Mini Universe – Main Base (Real Comets)</title>
 
 <style>
   body { margin:0; overflow:hidden; background:black; }
@@ -165,7 +165,7 @@ scene.add(new THREE.Points(
   })
 ));
 
-/* ================= COMETS ================= */
+/* ================= REAL COMETS ================= */
 const comets = [];
 
 function spawnComet(){
@@ -175,9 +175,7 @@ function spawnComet(){
   );
 
   const tailPositions = [];
-  for(let i=0;i<80;i++){
-    tailPositions.push(0,0,-i*3);
-  }
+  for(let i=0;i<100;i++) tailPositions.push(0,0,-i*3);
 
   const tailGeo = new THREE.BufferGeometry();
   tailGeo.setAttribute(
@@ -185,22 +183,29 @@ function spawnComet(){
     new THREE.Float32BufferAttribute(tailPositions,3)
   );
 
-  const tailMesh = new THREE.Points(
-    tailGeo,
-    new THREE.PointsMaterial({
-      color:0x88ccff,
-      size:2,
-      opacity:0.8,
-      transparent:true,
-      depthWrite:false
-    })
+  const tailMat = new THREE.PointsMaterial({
+    color:0x88ccff,
+    size:2,
+    opacity:0.9,
+    transparent:true,
+    depthWrite:false
+  });
+
+  const tail = new THREE.Points(tailGeo, tailMat);
+  head.add(tail);
+
+  head.position.set(
+    THREE.MathUtils.randFloat(-2200,2200),
+    THREE.MathUtils.randFloat(-900,900),
+    THREE.MathUtils.randFloat(-2200,2200)
   );
 
-  head.add(tailMesh);
+  const direction = head.position.clone().normalize().multiplyScalar(-1);
+  head.velocity = direction.multiplyScalar(
+    THREE.MathUtils.randFloat(8,14)
+  );
 
-  head.angle = Math.random()*Math.PI*2;
-  head.dist  = THREE.MathUtils.randFloat(300,900);
-  head.speed = THREE.MathUtils.randFloat(0.003,0.006);
+  head.tail = tail;
 
   scene.add(head);
   comets.push(head);
@@ -229,32 +234,6 @@ setInterval(()=>{
   shootingStars.push({ star, life:50 });
 },3000);
 
-/* ================= SELECTION ================= */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let selected = null;
-
-window.addEventListener("click",(e)=>{
-  if(isDragging) return;
-
-  mouse.x = (e.clientX/innerWidth)*2-1;
-  mouse.y = -(e.clientY/innerHeight)*2+1;
-  raycaster.setFromCamera(mouse,camera);
-
-  const hits = raycaster.intersectObjects(planets.map(p=>p.mesh));
-  if(hits.length){
-    selected = planets.find(p=>p.mesh===hits[0].object);
-    ZOOM_MIN = selected.size * 2;
-    ZOOM_MAX = selected.dist * 3;
-    zoomTarget = selected.dist * 2;
-  } else {
-    selected = null;
-    controls.target.set(0,0,0);
-    ZOOM_MIN = 120;
-    ZOOM_MAX = 3200;
-  }
-});
-
 /* ================= LOOP ================= */
 function animate(){
   requestAnimationFrame(animate);
@@ -268,14 +247,17 @@ function animate(){
     );
   });
 
-  comets.forEach(c=>{
-    c.angle += c.speed;
-    c.position.set(
-      Math.cos(c.angle)*c.dist,
-      Math.sin(c.angle*0.3)*80,
-      Math.sin(c.angle)*c.dist
-    );
-    c.lookAt(controls.target);
+  comets.forEach((c,i)=>{
+    c.position.add(c.velocity);
+    c.tail.material.opacity -= 0.003;
+
+    const pull = c.position.clone().multiplyScalar(-0.00002);
+    c.velocity.add(pull);
+
+    if(c.tail.material.opacity <= 0){
+      scene.remove(c);
+      comets.splice(i,1);
+    }
   });
 
   shootingStars.forEach((s,i)=>{
@@ -285,8 +267,6 @@ function animate(){
       shootingStars.splice(i,1);
     }
   });
-
-  if(selected) controls.target.copy(selected.mesh.position);
 
   const dir = camera.position.clone().sub(controls.target).normalize();
   const dist = camera.position.distanceTo(controls.target);
