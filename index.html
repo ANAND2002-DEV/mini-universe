@@ -349,13 +349,6 @@ STAR_RINGS.forEach((ring,ri)=>{
 
     scene.add(star);
     memoryStars.push(star);
-
-    // Attach shayari ONLY to golden stars
-    if(star.material.color.getHex() === GOLDEN_COLOR && goldenStarIndex < SHAYARIS.length){
-      star.userData.shayari = SHAYARIS[goldenStarIndex];
-      goldenStarIndex++;
-    }
-
   }
 });
 
@@ -460,42 +453,6 @@ function spawnComet(){
 }
 setInterval(spawnComet,7000);
 
-
-/* ================= SHAYARI (GOLDEN STARS) ================= */
-const GOLDEN_COLOR = 0xffcc66;
-
-const SHAYARIS = [
-`Tumhare naam se mohabbat ki hai,
-Tumhare ehsaas se mohabbat ki hai,
-Tum paas nahi ho, par phir bhi,
-Tumhari yaad se mohabbat ki hai.`,
-
-`Aankhon mein teri, ek nasha sa hai,
-Jo mere dil ko bekhabar karta hai.`,
-
-`Meri har subah ki pehli soch,
-Aur har raat ka aakhiri khayal ho tum.`,
-
-`Hazaaron rang hain mere dil mein,
-Magar sabse pyaara rang ho tum.`,
-
-`Teri yaadon ki khushboo se mehka hai mera kamra,
-Hum tere naam se hi mehfil saja lete hain.`,
-
-`Teri awaaz, tera chehra, teri har ek baat,
-Sach kahu to meri har khushi ka karan sirf tu hai.`,
-
-`Dil ne har dua mein bas tera hi naam liya,
-Shayad isliye zindagi ne mujhe tu tohfa bana ke diya.`,
-
-`Tu muskuraati hai to lagta hai,
-Mere liye rab se aayi koi dua ho tum.
-Tere bina sab kuchh adhoora sa lagta hai,
-Tu saath ho to har lamha pura sa lagta hai.`
-];
-
-let goldenStarIndex = 0;
-
 /* ================= RAYCAST ================= */
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
@@ -562,14 +519,6 @@ window.addEventListener("dblclick",(e)=>{
     document.getElementById("planetImg").src="./assets/photos/"+i.photo;
     document.getElementById("planetModal").style.display="flex";
     playAudio("./assets/audio/"+i.audio);
-  }
-
-  
-  if(obj.userData.type==="star" && obj.userData.shayari){
-    closeAll();
-    document.getElementById("shayariText").innerText = obj.userData.shayari;
-    document.getElementById("shayariModal").style.display = "flex";
-    return;
   }
 
   if(obj.userData.type==="star" && obj.userData.video){
@@ -650,15 +599,5 @@ window.addEventListener("resize",()=>{
   renderer.setSize(innerWidth,innerHeight);
 });
 </script>
-
-<!-- ✨ SHAYARI MODAL (Golden Stars) -->
-<div id="shayariModal" class="modal">
-  <div class="modal-card">
-    <h2>✨ Shayari</h2>
-    <p id="shayariText" style="white-space:pre-line; line-height:1.6;"></p>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
-
 </body>
 </html>
