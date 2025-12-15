@@ -119,13 +119,13 @@ document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
-/* ================= CONTROLS (NASA-EYES STYLE) ================= */
+/* ================= CONTROLS ================= */
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enablePan = false;
-controls.enableZoom = false;
-controls.enableDamping = true;
-controls.dampingFactor = 0.15;
-controls.rotateSpeed = 0.35;
+controls.enablePan=false;
+controls.enableZoom=false;
+controls.enableDamping=true;
+controls.dampingFactor=0.15;
+controls.rotateSpeed=0.35;
 
 /* ================= DRAG DETECT ================= */
 let isDragging=false;
@@ -217,7 +217,7 @@ planetData.forEach(p=>{
   ));
 });
 
-/* ================= MEMORY STARS (RINGS) ================= */
+/* ================= MEMORY STARS ================= */
 const memoryStars=[];
 const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 const STAR_RINGS=[
@@ -315,6 +315,7 @@ const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
 let selected=null;
 
+/* ---- SINGLE CLICK : ZOOM ONLY ---- */
 window.addEventListener("click",(e)=>{
   if(isDragging) return;
 
@@ -341,13 +342,6 @@ window.addEventListener("click",(e)=>{
     zoomTarget=obj.position.length()*0.9;
     ZOOM_MIN=60;
     ZOOM_MAX=3000;
-
-    if(obj.userData.type==="planet"){
-      const info=obj.userData.info;
-      document.getElementById("planetTitle").innerText=info.name;
-      document.getElementById("planetImg").src="./assets/photos/"+info.photo;
-      document.getElementById("planetModal").style.display="flex";
-    }
   } else {
     selected=null;
     controls.target.set(0,0,0);
@@ -356,7 +350,24 @@ window.addEventListener("click",(e)=>{
   }
 });
 
-/* ================= ANIMATION LOOP ================= */
+/* ---- DOUBLE CLICK : PLANET PHOTO ---- */
+window.addEventListener("dblclick",(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+
+  const hits=raycaster.intersectObjects(planets.map(p=>p.mesh));
+  if(!hits.length) return;
+
+  const planet=hits[0].object;
+  const info=planet.userData.info;
+
+  document.getElementById("planetTitle").innerText=info.name;
+  document.getElementById("planetImg").src="./assets/photos/"+info.photo;
+  document.getElementById("planetModal").style.display="flex";
+});
+
+/* ================= ANIMATE ================= */
 function animate(){
   requestAnimationFrame(animate);
 
