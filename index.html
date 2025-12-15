@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Mini Universe — MAIN BASE</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<title>Mini Universe — FINAL MAIN BASE</title>
 
 <style>
 body{
   margin:0;
   overflow:hidden;
   background:black;
-  font-family:Arial, sans-serif;
-  touch-action:none;
+  font-family:Arial,sans-serif;
 }
 .modal{
   position:fixed;
@@ -30,6 +27,7 @@ body{
   max-width:420px;
   text-align:center;
   color:#fff;
+  box-shadow:0 0 40px rgba(0,0,0,0.7);
 }
 .modal-card img{
   width:100%;
@@ -41,6 +39,7 @@ body{
   opacity:0.8;
   margin-top:10px;
 }
+.close-btn:hover{opacity:1;}
 #sunModal .modal-card{
   border:1px solid rgba(255,200,80,0.5);
   color:#ffd27d;
@@ -58,7 +57,7 @@ body{
 
 <body>
 
-<!-- SUN MEMORY -->
+<!-- 🌞 SUN MEMORY -->
 <div id="sunModal" class="modal">
   <div class="modal-card">
     <h2>🌞 Our First Meeting</h2>
@@ -67,7 +66,7 @@ body{
   </div>
 </div>
 
-<!-- PLANET MODAL -->
+<!-- 🪐 PLANET PHOTO -->
 <div id="planetModal" class="modal">
   <div class="modal-card">
     <h2 id="planetTitle"></h2>
@@ -78,7 +77,8 @@ body{
 
 <script type="module">
 import * as THREE from "three";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { OrbitControls } from
+"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
 /* ================= AUDIO ================= */
 let currentAudio=null;
@@ -98,38 +98,20 @@ function stopAudio(){
 }
 
 /* ================= SUN MEMORY ================= */
-const FIRST_MEET=new Date("2025-09-27");
-document.getElementById("meetingText").innerHTML=
-`From our first meet on <b>27 September 2025</b>,<br>
-our love keeps growing.<br><br>
-It’s been <b>${Math.floor((Date.now()-FIRST_MEET)/(1000*60*60*24))} days</b>,<br>
-and our love is still growing 💛`;
+const FIRST_MEET_DATE=new Date("2025-09-27");
+function daysSince(){
+  return Math.floor((new Date()-FIRST_MEET_DATE)/(1000*60*60*24));
+}
+function updateMeeting(){
+  document.getElementById("meetingText").innerHTML=
+    `From our first meet on <b>27 September 2025</b>,<br>
+     our love keeps growing.<br><br>
+     It’s been <b>${daysSince()} days</b>,<br>
+     and our love is still growing 💛`;
+}
+updateMeeting();
 
-/* ================= SCENE ================= */
-const scene=new THREE.Scene();
-
-/* CAMERA */
-const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,1,30000);
-camera.position.set(0,180,360);
-
-/* RENDERER */
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
-document.body.appendChild(renderer.domElement);
-
-/* LIGHT */
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
-scene.add(new THREE.PointLight(0xffffff,2.5,20000));
-
-/* CONTROLS */
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enablePan=false;
-controls.enableZoom=false;
-controls.enableDamping=true;
-controls.dampingFactor=0.15;
-
-/* SELECTION */
+/* ================= MODAL CLOSE (FIXED) ================= */
 let selected=null;
 function closeAll(){
   stopAudio();
@@ -139,45 +121,49 @@ function closeAll(){
 }
 window.closeAll=closeAll;
 
-/* ZOOM CORE */
-let zoomTarget=camera.position.distanceTo(controls.target);
-let ZOOM_MIN=120, ZOOM_MAX=6000;
-const ZOOM_STEP=120, ZOOM_SMOOTH=0.08;
+/* ================= SCENE ================= */
+const scene=new THREE.Scene();
 
-/* DESKTOP ZOOM */
+/* ================= CAMERA ================= */
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,1,30000);
+camera.position.set(0,180,360);
+
+/* ================= RENDERER ================= */
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+/* ================= LIGHT ================= */
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+scene.add(new THREE.PointLight(0xffffff,2.5,20000));
+
+/* ================= CONTROLS ================= */
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enablePan=false;
+controls.enableZoom=false;
+controls.enableDamping=true;
+controls.dampingFactor=0.15;
+controls.rotateSpeed=0.35;
+
+/* ================= DRAG ================= */
+let isDragging=false;
+renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
+renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
+
+/* ================= ZOOM ================= */
+let zoomTarget=camera.position.distanceTo(controls.target);
+let ZOOM_MIN=120,ZOOM_MAX=6000;
+const ZOOM_STEP=120,ZOOM_SMOOTH=0.08;
+
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
   zoomTarget+=Math.sign(e.deltaY)*ZOOM_STEP;
   zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
 },{passive:false});
 
-/* MOBILE PINCH ZOOM */
-let lastPinch=null;
-renderer.domElement.addEventListener("touchstart",e=>{
-  if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
-    lastPinch=Math.hypot(dx,dy);
-  }
-},{passive:false});
-
-renderer.domElement.addEventListener("touchmove",e=>{
-  if(e.touches.length===2 && lastPinch){
-    e.preventDefault();
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
-    const dist=Math.hypot(dx,dy);
-    zoomTarget+= (lastPinch-dist)*0.8;
-    zoomTarget=THREE.MathUtils.clamp(zoomTarget,ZOOM_MIN,ZOOM_MAX);
-    lastPinch=dist;
-  }
-},{passive:false});
-
-renderer.domElement.addEventListener("touchend",()=>lastPinch=null);
-
-/* BACKGROUND STARS */
-const bgGeo=new THREE.BufferGeometry();
-const bg=[];
+/* ================= BACKGROUND STARS ================= */
+const bgGeo=new THREE.BufferGeometry(),bg=[];
 for(let i=0;i<18000;i++){
   const r=THREE.MathUtils.randFloat(6000,20000);
   const t=Math.random()*Math.PI*2;
@@ -187,7 +173,7 @@ for(let i=0;i<18000;i++){
 bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
 scene.add(new THREE.Points(bgGeo,new THREE.PointsMaterial({size:1})));
 
-/* SUN */
+/* ================= SUN ================= */
 const loader=new THREE.TextureLoader();
 const sun=new THREE.Mesh(
   new THREE.SphereGeometry(36,64,64),
@@ -200,80 +186,191 @@ const sun=new THREE.Mesh(
 sun.userData.type="sun";
 scene.add(sun);
 
-/* PLANETS */
+/* ================= PLANETS ================= */
 const planetData=[
- ["Mercury",8,70,1.8,"mercury.jpg","photo01.jpg","star01.mp3"],
- ["Venus",12,95,1.5,"venus.jpg","photo02.jpg","star02.mp3"],
- ["Earth",14,120,1.2,"earth.jpg","photo03.jpg","star03.mp3"],
- ["Mars",12,150,1.0,"mars.jpg","photo04.jpg","star04.mp3"],
- ["Jupiter",26,200,0.7,"jupiter.jpg","photo05.jpg","star05.mp3"],
- ["Saturn",24,260,0.45,"saturn.jpg","photo06.jpg","star06.mp3"],
- ["Uranus",22,320,0.35,"uranus.jpg","photo07.jpg","star07.mp3"],
- ["Neptune",22,380,0.28,"neptune.jpg","photo08.jpg","star08.mp3"],
- ["Pluto",10,440,0.22,"pluto.jpg","photo09.jpg","star09.mp3"],
- ["Eris",10,500,0.18,"eris.jpg","photo10.jpg","star10.mp3"]
+ {name:"Mercury",size:8,dist:70,speed:1.8,tex:"mercury.jpg",photo:"photo01.jpg",audio:"star01.mp3"},
+ {name:"Venus",size:12,dist:95,speed:1.5,tex:"venus.jpg",photo:"photo02.jpg",audio:"star02.mp3"},
+ {name:"Earth",size:14,dist:120,speed:1.2,tex:"earth.jpg",photo:"photo03.jpg",audio:"star03.mp3"},
+ {name:"Mars",size:12,dist:150,speed:1.0,tex:"mars.jpg",photo:"photo04.jpg",audio:"star04.mp3"},
+ {name:"Jupiter",size:26,dist:200,speed:0.7,tex:"jupiter.jpg",photo:"photo05.jpg",audio:"star05.mp3"},
+ {name:"Saturn",size:24,dist:260,speed:0.45,tex:"saturn.jpg",photo:"photo06.jpg",audio:"star06.mp3"},
+ {name:"Uranus",size:22,dist:320,speed:0.35,tex:"uranus.jpg",photo:"photo07.jpg",audio:"star07.mp3"},
+ {name:"Neptune",size:22,dist:380,speed:0.28,tex:"neptune.jpg",photo:"photo08.jpg",audio:"star08.mp3"},
+ {name:"Pluto",size:10,dist:440,speed:0.22,tex:"pluto.jpg",photo:"photo09.jpg",audio:"star09.mp3"},
+ {name:"Eris",size:10,dist:500,speed:0.18,tex:"eris.jpg",photo:"photo10.jpg",audio:"star10.mp3"}
 ];
 
 const planets=[];
+const ORBIT_SPEED=0.00035;
+
 planetData.forEach(p=>{
   const mesh=new THREE.Mesh(
-    new THREE.SphereGeometry(p[1],48,48),
-    new THREE.MeshStandardMaterial({map:loader.load("./assets/planets/"+p[4])})
+    new THREE.SphereGeometry(p.size,48,48),
+    new THREE.MeshStandardMaterial({map:loader.load("./assets/planets/"+p.tex)})
   );
-  mesh.userData={type:"planet",info:{name:p[0],photo:p[5],audio:p[6]}};
-  mesh.angle=Math.random()*Math.PI*2;
-  mesh.dist=p[2];
-  mesh.speed=p[3];
+  mesh.userData={type:"planet",info:p};
   scene.add(mesh);
-  planets.push(mesh);
+  planets.push({...p,mesh,angle:Math.random()*Math.PI*2});
 });
 
-/* RAYCAST */
+/* ================= ORBIT RINGS ================= */
+planetData.forEach(p=>{
+  const curve=new THREE.EllipseCurve(0,0,p.dist,p.dist,0,Math.PI*2);
+  const pts=curve.getPoints(160);
+  const geo=new THREE.BufferGeometry().setFromPoints(
+    pts.map(pt=>new THREE.Vector3(pt.x,0,pt.y))
+  );
+  scene.add(new THREE.Line(
+    geo,
+    new THREE.LineBasicMaterial({color:0xffffff,opacity:0.12,transparent:true})
+  ));
+});
+
+/* ================= MEMORY STARS ================= */
+const memoryStars=[];
+const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
+const STAR_RINGS=[{radius:720,count:8},{radius:900,count:9},{radius:1150,count:8}];
+
+STAR_RINGS.forEach((ring,ri)=>{
+  for(let i=0;i<ring.count;i++){
+    const star=new THREE.Mesh(
+      new THREE.SphereGeometry(8,20,20),
+      new THREE.MeshBasicMaterial({color:STAR_COLORS[(i+ri)%STAR_COLORS.length]})
+    );
+    star.userData.type="star";
+    const hit=new THREE.Mesh(
+      new THREE.SphereGeometry(18,16,16),
+      new THREE.MeshBasicMaterial({visible:false})
+    );
+    hit.userData.type="starHit";
+    star.add(hit);
+
+    const a=(i/ring.count)*Math.PI*2;
+    star.position.set(
+      Math.cos(a)*ring.radius,
+      THREE.MathUtils.randFloat(-40,40),
+      Math.sin(a)*ring.radius
+    );
+    scene.add(star);
+    memoryStars.push(star);
+  }
+});
+
+/* ================= DUST ================= */
+const dustGeo=new THREE.BufferGeometry(),dust=[];
+for(let i=0;i<9000;i++){
+  const r=THREE.MathUtils.randFloat(80,650);
+  const a=Math.random()*Math.PI*2;
+  dust.push(Math.cos(a)*r,THREE.MathUtils.randFloat(-12,12),Math.sin(a)*r);
+}
+dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
+scene.add(new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({size:0.7,opacity:0.35,transparent:true,depthWrite:false})
+));
+
+/* ================= COMETS ================= */
+const comets=[];
+function spawnComet(){
+  const head=new THREE.Mesh(
+    new THREE.SphereGeometry(2.5,16,16),
+    new THREE.MeshBasicMaterial({color:0xffffff})
+  );
+  const tailPos=[];
+  for(let i=0;i<100;i++) tailPos.push(0,0,-i*3);
+  const tailGeo=new THREE.BufferGeometry();
+  tailGeo.setAttribute("position",new THREE.Float32BufferAttribute(tailPos,3));
+  const tail=new THREE.Points(
+    tailGeo,
+    new THREE.PointsMaterial({color:0x88ccff,size:2,opacity:0.9,transparent:true,depthWrite:false})
+  );
+  head.add(tail);
+  head.position.set(
+    THREE.MathUtils.randFloat(-2200,2200),
+    THREE.MathUtils.randFloat(-900,900),
+    THREE.MathUtils.randFloat(-2200,2200)
+  );
+  head.velocity=head.position.clone().normalize().multiplyScalar(-THREE.MathUtils.randFloat(8,14));
+  scene.add(head);
+  comets.push(head);
+}
+setInterval(spawnComet,7000);
+
+/* ================= RAYCAST ================= */
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
 
-window.addEventListener("click",e=>{
+/* ---- SINGLE CLICK (ZOOM / SUN FIXED) ---- */
+window.addEventListener("click",(e)=>{
+  if(isDragging) return;
+
+  stopAudio();
+
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
 
-  const hits=raycaster.intersectObjects([sun,...planets]);
+  const hits=raycaster.intersectObjects([sun,...planets.map(p=>p.mesh),...memoryStars],true);
   if(hits.length){
-    const obj=hits[0].object;
+    let obj=hits[0].object;
+    if(obj.userData.type==="starHit") obj=obj.parent;
+
     if(obj.userData.type==="sun"){
       closeAll();
       document.getElementById("sunModal").style.display="flex";
       return;
     }
+
     selected=obj;
     zoomTarget=obj.position.length()*0.9;
-    ZOOM_MIN=60; ZOOM_MAX=3000;
+    ZOOM_MIN=60;
+    ZOOM_MAX=3000;
   }else{
     closeAll();
-    ZOOM_MIN=120; ZOOM_MAX=6000;
+    ZOOM_MIN=120;
+    ZOOM_MAX=6000;
   }
 });
 
-window.addEventListener("dblclick",e=>{
+/* ---- DOUBLE CLICK (PHOTO + AUDIO) ---- */
+window.addEventListener("dblclick",(e)=>{
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   raycaster.setFromCamera(mouse,camera);
-  const hit=raycaster.intersectObjects(planets)[0];
-  if(!hit) return;
-  const info=hit.object.userData.info;
+
+  const hits=raycaster.intersectObjects(planets.map(p=>p.mesh));
+  if(!hits.length) return;
+
+  const planet=hits[0].object;
+  const info=planet.userData.info;
+
   document.getElementById("planetTitle").innerText=info.name;
   document.getElementById("planetImg").src="./assets/photos/"+info.photo;
   document.getElementById("planetModal").style.display="flex";
   playAudio("./assets/audio/"+info.audio);
 });
 
-/* ANIMATE */
+/* ================= ANIMATE ================= */
 function animate(){
   requestAnimationFrame(animate);
 
   planets.forEach(p=>{
-    p.angle+=0.00035*p.speed;
-    p.position.set(Math.cos(p.angle)*p.dist,0,Math.sin(p.angle)*p.dist);
+    p.angle+=ORBIT_SPEED*p.speed;
+    p.mesh.position.set(Math.cos(p.angle)*p.dist,0,Math.sin(p.angle)*p.dist);
+  });
+
+  memoryStars.forEach(s=>{
+    s.scale.setScalar(1+Math.sin(Date.now()*0.002+s.position.x)*0.15);
+  });
+
+  comets.forEach((c,i)=>{
+    c.position.add(c.velocity);
+    c.velocity.add(c.position.clone().multiplyScalar(-0.00002));
+    c.children[0].material.opacity-=0.003;
+    if(c.children[0].material.opacity<=0){
+      scene.remove(c);
+      comets.splice(i,1);
+    }
   });
 
   if(selected) controls.target.copy(selected.position);
