@@ -81,12 +81,13 @@ html,body{
 .purple{background:#cc66ff;}
 
 
-.video{background:#1f6fff;}        /* Dark sky blue */
-.shayari{background:#d63384;}      /* Dark pink */
-.promise{background:#b8860b;}      /* Dark golden */
-.memory{background:#ff2a2a;}       /* Bright red */
-.aiBirthday{background:#ff77cc;}   /* Lotus pink */
-.yotoBirthday{background:#7b3fe4;} /* Lotus purple */
+/* === ROLE COLORS (SAFE ADD) === */
+.dot.video{background:#1f6fff;}
+.dot.shayari{background:#d63384;}
+.dot.promise{background:#b8860b;}
+.dot.memory{background:#ff2a2a;}
+.dot.aiBirthday{background:#ff77cc;}
+.dot.yotoBirthday{background:#7b3fe4;}
 
 </style>
 
@@ -102,7 +103,6 @@ html,body{
 <body>
 
 <!-- ⭐ STAR LEGEND -->
-
 <div id="legend">
   <h3>Star Legend</h3>
   <div><span class="dot video"></span> Video Memories</div>
@@ -111,12 +111,6 @@ html,body{
   <div><span class="dot memory"></span> Our Memories (Dates)</div>
   <div><span class="dot aiBirthday"></span> AI Birthday</div>
   <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
-</div>
-
-<div><span class="dot gold"></span> Promises</div>
-  <div><span class="dot pink"></span> Shayaris</div>
-  <div><span class="dot green"></span> Voice Notes</div>
-  <div><span class="dot purple"></span> Hidden Memories</div>
 </div>
 
 
@@ -382,17 +376,6 @@ const STAR_ROLE_SEQUENCE = [
   // remaining stars default to "memory" (flexible)
 ];
 
-
-// ================= STAR ROLE STYLES (STEP-2 VISUALS) =================
-const STAR_ROLE_STYLE = {
-  video:      { color: 0x1f6fff, glow: 0.45, scale: 1.0 },
-  shayari:    { color: 0xd63384, glow: 0.45, scale: 1.0 },
-  promise:    { color: 0xb8860b, glow: 0.45, scale: 1.0 },
-  memory:     { color: 0xff2a2a, glow: 0.45, scale: 1.0 },
-  birthday_ai:{ color: 0xff77cc, glow: 0.9,  scale: 1.6 },
-  birthday_yoto:{color:0x7b3fe4, glow: 0.9,  scale: 1.6 }
-};
-
 const STAR_RINGS=[
   {radius:1650,count:8},
   {radius:1850,count:9},
@@ -434,15 +417,43 @@ STAR_RINGS.forEach((ring,ri)=>{
     );
 
     scene.add(star);
-
-    // ===== Apply ROLE-BASED VISUAL STYLE (STEP-2) =====
-    const style = STAR_ROLE_STYLE[role] || STAR_ROLE_STYLE.memory;
-    star.material.color.setHex(style.color);
-    star.material.emissive = new THREE.Color(0xffffff);
-    star.material.emissiveIntensity = style.glow;
-    star.scale.setScalar(style.scale);
-
     memoryStars.push(star);
+    // === ROLE-BASED VISUALS (SAFE ADD) ===
+    if(star.userData && star.userData.role){
+      if(star.userData.role === "video"){
+        star.material.color.setHex(0x1f6fff);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.4;
+      }
+      if(star.userData.role === "shayari"){
+        star.material.color.setHex(0xd63384);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.4;
+      }
+      if(star.userData.role === "promise"){
+        star.material.color.setHex(0xb8860b);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.4;
+      }
+      if(star.userData.role === "memory"){
+        star.material.color.setHex(0xff2a2a);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.4;
+      }
+      if(star.userData.role === "birthday_ai"){
+        star.material.color.setHex(0xff77cc);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.9;
+        star.scale.setScalar(1.6);
+      }
+      if(star.userData.role === "birthday_yoto"){
+        star.material.color.setHex(0x7b3fe4);
+        star.material.emissive = new THREE.Color(0xffffff);
+        star.material.emissiveIntensity = 0.9;
+        star.scale.setScalar(1.6);
+      }
+    }
+
   }
 });
 
