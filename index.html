@@ -441,17 +441,16 @@ memoryStars.forEach(star => {
 });
 
 
-// ===== Assign shayaris ONLY to golden stars (SAFE) =====
-let goldenIndex = 0;
+// ===== Assign shayaris ONLY to shayari-role stars (FIXED) =====
+let shayariIndex = 0;
 memoryStars.forEach(star => {
   if (
-    star.material &&
-    star.material.color &&
-    star.material.color.getHex() === PINK_HEX &&
-    goldenIndex < SHAYARIS.length
+    star.userData &&
+    star.userData.role === "shayari" &&
+    shayariIndex < SHAYARIS.length
   ) {
-    star.userData.shayariIndex = goldenIndex;
-    goldenIndex++;
+    star.userData.shayariIndex = shayariIndex;
+    shayariIndex++;
   }
 });
 
