@@ -80,15 +80,6 @@ html,body{
 .green{background:#66ffaa;}
 .purple{background:#cc66ff;}
 
-
-/* === ROLE COLORS (SAFE ADD) === */
-.dot.video{background:#1f6fff;}
-.dot.shayari{background:#d63384;}
-.dot.promise{background:#b8860b;}
-.dot.memory{background:#ff2a2a;}
-.dot.aiBirthday{background:#ff77cc;}
-.dot.yotoBirthday{background:#7b3fe4;}
-
 </style>
 
 <script type="importmap">
@@ -105,12 +96,11 @@ html,body{
 <!-- ⭐ STAR LEGEND -->
 <div id="legend">
   <h3>Star Legend</h3>
-  <div><span class="dot video"></span> Video Memories</div>
-  <div><span class="dot shayari"></span> Shayaris</div>
-  <div><span class="dot promise"></span> Promises</div>
-  <div><span class="dot memory"></span> Our Memories (Dates)</div>
-  <div><span class="dot aiBirthday"></span> AI Birthday</div>
-  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
+  <div><span class="dot blue"></span> Video Memories</div>
+  <div><span class="dot gold"></span> Promises</div>
+  <div><span class="dot pink"></span> Shayaris</div>
+  <div><span class="dot green"></span> Voice Notes</div>
+  <div><span class="dot purple"></span> Hidden Memories</div>
 </div>
 
 
@@ -325,14 +315,7 @@ const videos=[
 
 const memoryStars=[];
 
-// STAR_COLORS kept ONLY for visual continuity (STEP-1)
-const STAR_COLORS=[
-  0x66ccff, // video
-  0xffcc66, // promise
-  0xff66aa, // shayari
-  0x66ffaa, // voice / memory (legacy)
-  0xcc66ff  // hidden / legacy
-];
+const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 
 // ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
 const GOLDEN_HEX = 0xffcc66;
@@ -367,15 +350,6 @@ Tere bina sab kuchh adhoora sa lagta hai,
 Tu saath ho to har lamha pura sa lagta hai.`
 ];
 
-
-// ================= STAR ROLE CONFIG (STEP-1 FOUNDATION) =================
-const STAR_ROLE_SEQUENCE = [
-  ...Array(5).fill("video"),      // 5 video stars
-  ...Array(4).fill("promise"),    // 4 promise stars
-  ...Array(8).fill("shayari"),    // 8 shayari stars
-  // remaining stars default to "memory" (flexible)
-];
-
 const STAR_RINGS=[
   {radius:1650,count:8},
   {radius:1850,count:9},
@@ -384,22 +358,14 @@ const STAR_RINGS=[
 
 STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
-    const role = STAR_ROLE_SEQUENCE[memoryStars.length] || "memory";
-
     const star=new THREE.Mesh(
       new THREE.SphereGeometry(8,20,20),
       new THREE.MeshBasicMaterial({
-        color:STAR_COLORS[(i+ri)%STAR_COLORS.length] // visual unchanged (STEP-1)
+        color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
       })
     );
-
-    star.userData.type = "star";
-    star.userData.role = role;
-
-    // attach video ONLY for video-role stars (keeps behavior same)
-    star.userData.video = (role === "video")
-      ? videos[memoryStars.length] || null
-      : null;
+    star.userData.type="star";
+    star.userData.video=videos[memoryStars.length]||null;
 
     // Invisible hit area
     const hit=new THREE.Mesh(
@@ -418,47 +384,11 @@ STAR_RINGS.forEach((ring,ri)=>{
 
     scene.add(star);
     memoryStars.push(star);
-    // === ROLE-BASED VISUALS (SAFE ADD) ===
-    if(star.userData && star.userData.role){
-      if(star.userData.role === "video"){
-        star.material.color.setHex(0x1f6fff);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.4;
-      }
-      if(star.userData.role === "shayari"){
-        star.material.color.setHex(0xd63384);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.4;
-      }
-      if(star.userData.role === "promise"){
-        star.material.color.setHex(0xb8860b);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.4;
-      }
-      if(star.userData.role === "memory"){
-        star.material.color.setHex(0xff2a2a);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.4;
-      }
-      if(star.userData.role === "birthday_ai"){
-        star.material.color.setHex(0xff77cc);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.9;
-        star.scale.setScalar(1.6);
-      }
-      if(star.userData.role === "birthday_yoto"){
-        star.material.color.setHex(0x7b3fe4);
-        star.material.emissive = new THREE.Color(0xffffff);
-        star.material.emissiveIntensity = 0.9;
-        star.scale.setScalar(1.6);
-      }
-    }
-
   }
 });
 
 
-// ===== Assign shayaris ONLY to SHAYARI-role stars (STEP-1, color unchanged) =====
+// ===== Assign shayaris ONLY to golden stars (SAFE) =====
 let goldenIndex = 0;
 memoryStars.forEach(star => {
   if (
