@@ -643,7 +643,24 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
-  closeAll();
+
+  // ☀️ Focus & FULL ZOOM on Sun (same as planets)
+  selected = obj;
+  lastFocus = obj;
+  lastFocusZoom = zoomTarget;
+
+  const size = obj.geometry.boundingSphere.radius * obj.scale.x;
+  zoomTarget = Math.max(size * 1.8, 60);
+
+  const dir = camera.position.clone()
+    .sub(controls.target)
+    .normalize();
+
+  camera.position.copy(
+    obj.position.clone().add(
+      dir.multiplyScalar(zoomTarget * 1.4)
+    )
+  );
 
   const mt = document.getElementById("meetingText");
   if (mt) {
@@ -746,7 +763,7 @@ function animate(){
   requestAnimationFrame(animate);
 
   planets.forEach(p=>{
-    p.angle+=0.00055*p.speed; // slightly faster orbit to keep system lively
+    p.angle+=0.00035*p.speed;
     p.mesh.position.set(
       Math.cos(p.angle)*p.dist,
       (p.dist % 2 === 0 ? 10 : -10),
