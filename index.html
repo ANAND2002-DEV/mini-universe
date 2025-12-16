@@ -588,11 +588,30 @@ window.addEventListener("click",(e)=>{
     let obj=hits[0].object;
     if(obj.userData.type==="starHit") obj=obj.parent;
 
-    if(obj.userData.type==="sun"){
-      closeAll();
-      document.getElementById("sunModal").style.display="flex";
-      return;
-    }
+  if (obj.userData.type === "sun") {
+  closeAll();
+
+  const mt = document.getElementById("meetingText");
+  if (mt) {
+    const firstMeetingDate = new Date("2025-09-27");
+    const today = new Date();
+    const daysTogether = Math.floor(
+      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+    );
+
+    mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+  }
+
+  document.getElementById("sunModal").style.display = "flex";
+  return;
+}
 
     selected=obj;
     ZOOM_MIN = 60;
