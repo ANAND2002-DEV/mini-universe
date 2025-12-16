@@ -12,6 +12,8 @@ html,body{
   background:black;
   font-family:Arial,sans-serif;
 }
+
+/* ===== MODALS ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -46,7 +48,7 @@ html,body{
   color:#ffd27d;
 }
 
-/* ⭐ STAR LEGEND */
+/* ===== STAR LEGEND ===== */
 #legend{
   position:fixed;
   bottom:20px;
@@ -69,25 +71,19 @@ html,body{
   margin:4px 0;
 }
 .dot{
- /* ===== STAR LEGEND COLORS (NEW SYSTEM) ===== */
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-right:8px;
+}
+
+/* Legend colors */
 .dot.video{background:#1f6fff;}        /* Video Memories */
 .dot.shayari{background:#d63384;}      /* Shayaris */
 .dot.promise{background:#b8860b;}      /* Promises */
 .dot.memory{background:#ff2a2a;}       /* Our Memories */
 .dot.aiBirthday{background:#ff77cc;}   /* AI Birthday */
 .dot.yotoBirthday{background:#7b3fe4;} /* YOTO Birthday */
-
-  <!-- ⭐ STAR LEGEND -->
-<div id="legend">
-  <h3>Star Legend</h3>
-
-  <div><span class="dot video"></span> Video Memories</div>
-  <div><span class="dot shayari"></span> Shayaris</div>
-  <div><span class="dot promise"></span> Promises</div>
-  <div><span class="dot memory"></span> Our Memories</div>
-  <div><span class="dot aiBirthday"></span> AI Birthday</div>
-  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
-</div>
 
 </style>
 
@@ -105,22 +101,14 @@ html,body{
 <!-- ⭐ STAR LEGEND -->
 <div id="legend">
   <h3>Star Legend</h3>
-  <div><span class="dot blue"></span> Video Memories</div>
-  <div><span class="dot gold"></span> Promises</div>
-  <div><span class="dot pink"></span> Shayaris</div>
-  <div><span class="dot green"></span> Voice Notes</div>
-  <div><span class="dot purple"></span> Hidden Memories</div>
+  <div><span class="dot video"></span> Video Memories</div>
+  <div><span class="dot shayari"></span> Shayaris</div>
+  <div><span class="dot promise"></span> Promises</div>
+  <div><span class="dot memory"></span> Our Memories</div>
+  <div><span class="dot aiBirthday"></span> AI Birthday</div>
+  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
 </div>
 
-
-<!-- 🌞 SUN -->
-<div id="sunModal" class="modal">
-  <div class="modal-card">
-    <h2>🌞 Our First Meeting</h2>
-    <p id="meetingText"></p>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
 
 <!-- 🪐 PLANET PHOTO -->
 <div id="planetModal" class="modal">
