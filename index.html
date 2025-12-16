@@ -164,21 +164,21 @@ function stopVideo(){
 
 /* ================= CORE STATE ================= */
 let selected=null;
-let lastStarPos = null;
-let lastStarZoom = null;
+let lastStarPos=null;
+let lastStarZoom=null;
 function closeAll(){
   stopAudio();
   stopVideo();
 
-  // 🔁 If coming from a star, zoom out around that star (not Sun)
-  if (lastStarPos && lastStarZoom){
-    selected = null;
+  // ⭐ Zoom out from star instead of jumping to Sun
+  if(lastStarPos && lastStarZoom){
+    selected=null;
     controls.target.copy(lastStarPos);
     zoomTarget = Math.min(lastStarZoom * 1.8, ZOOM_MAX);
-    lastStarPos = null;
-    lastStarZoom = null;
-  } else {
-    selected = null;
+    lastStarPos=null;
+    lastStarZoom=null;
+  }else{
+    selected=null;
     controls.target.set(0,0,0);
   }
 
@@ -203,13 +203,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.15;
+controls.dampingFactor=0.08; // smoother camera damping
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
+const ZOOM_SMOOTH = 0.045; // smoother zoom
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
@@ -612,7 +612,15 @@ This universe exists to remember every single one of them.`;
   return;
 }
 
-    selected=obj;
+    selected = obj;
+
+    // 🔥 AUTO FULL ZOOM ON CLICK (planet & sun)
+    const size = obj.geometry
+      ? obj.geometry.boundingSphere.radius * obj.scale.x
+      : 40;
+
+    zoomTarget = Math.max(size * 3.2, 80);
+
     ZOOM_MIN = 60;
     ZOOM_MAX = 3000;
   }else{
@@ -648,10 +656,8 @@ window.addEventListener("dblclick",(e)=>{
 
   
   if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
-    // 📌 remember star focus for zoom-out on close
     lastStarPos = obj.position.clone();
     lastStarZoom = camera.position.distanceTo(controls.target);
-
     closeAll();
     document.getElementById("shayariText").innerText =
       SHAYARIS[obj.userData.shayariIndex];
@@ -660,10 +666,8 @@ window.addEventListener("dblclick",(e)=>{
   }
 
   if(obj.userData.type==="star" && obj.userData.video){
-    // 📌 remember star focus for zoom-out on close
     lastStarPos = obj.position.clone();
     lastStarZoom = camera.position.distanceTo(controls.target);
-
     playVideo(obj.userData.video);
   }
 });
