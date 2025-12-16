@@ -164,11 +164,22 @@ function stopVideo(){
 
 /* ================= CORE STATE ================= */
 let selected=null;
+let lastFocus=null;
+let lastFocusZoom=null;
 function closeAll(){
   stopAudio();
   stopVideo();
-  selected=null;
-  controls.target.set(0,0,0);
+
+  // 🔁 Restore last focused object (planet/star) instead of jumping to Sun
+  if(lastFocus){
+    selected = lastFocus;
+    controls.target.copy(lastFocus.position);
+    if(lastFocusZoom) zoomTarget = lastFocusZoom;
+  }else{
+    selected = null;
+    controls.target.set(0,0,0);
+  }
+
   document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 window.closeAll=closeAll;
@@ -658,6 +669,10 @@ This universe exists to remember every single one of them.`;
 
     selected = obj;
 
+    // 📌 remember last focused object
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
     // 🚀 FORCE FULL ZOOM + TRACK ON SINGLE CLICK (planet / sun / star)
     const size = obj.geometry
       ? obj.geometry.boundingSphere.radius * obj.scale.x
@@ -710,6 +725,8 @@ window.addEventListener("dblclick",(e)=>{
 
   
   if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
     closeAll();
     document.getElementById("shayariText").innerText =
       SHAYARIS[obj.userData.shayariIndex];
@@ -718,6 +735,8 @@ window.addEventListener("dblclick",(e)=>{
   }
 
   if(obj.userData.type==="star" && obj.userData.video){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
     playVideo(obj.userData.video);
   }
 });
