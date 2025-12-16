@@ -190,13 +190,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.08; // smoother camera damping (changed only value)
+controls.dampingFactor=0.15;
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.045; // smoother zoom (changed only value)
+const ZOOM_SMOOTH = 0.08;
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
@@ -599,7 +599,15 @@ This universe exists to remember every single one of them.`;
   return;
 }
 
-    selected=obj;
+    selected = obj;
+
+    // 🔥 AUTO FULL ZOOM ON CLICK (smooth & safe)
+    const size = obj.geometry
+      ? obj.geometry.boundingSphere.radius * obj.scale.x
+      : 40;
+
+    zoomTarget = Math.max(size * 3.2, 80);
+
     ZOOM_MIN = 60;
     ZOOM_MAX = 3000;
   }else{
