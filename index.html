@@ -432,6 +432,52 @@ function focusStarByRole(role){
   );
 }
 
+// ================= STAR NUMBER NAV (1–25) =================
+window.addEventListener("DOMContentLoaded",()=>{
+  const nav = document.getElementById("starNav");
+  if(!nav) return;
+
+  memoryStars.forEach((star, index)=>{
+    const btn = document.createElement("div");
+    btn.innerText = index + 1;
+    btn.style.width = "22px";
+    btn.style.height = "22px";
+    btn.style.borderRadius = "50%";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.style.cursor = "pointer";
+    btn.style.fontSize = "11px";
+    btn.style.color = "#fff";
+    btn.style.background = "#" + star.material.color.getHexString();
+    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
+
+    btn.addEventListener("click",()=>{
+      selected = star;
+      lastFocus = star;
+      lastFocusZoom = zoomTarget;
+
+      controls.target.copy(star.position);
+
+      const size = 20;
+      zoomTarget = Math.max(size * 1.6, 50);
+
+      const dir = camera.position.clone()
+        .sub(controls.target)
+        .normalize();
+
+      camera.position.copy(
+        star.position.clone().add(
+          dir.multiplyScalar(zoomTarget * 1.4)
+        )
+      );
+    });
+
+    nav.appendChild(btn);
+  });
+});
+
+
 // Attach clicks
 window.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll("#starNav .navDot").forEach(dot=>{
@@ -643,24 +689,7 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
-
-  // ☀️ Focus & FULL ZOOM on Sun (same as planets)
-  selected = obj;
-  lastFocus = obj;
-  lastFocusZoom = zoomTarget;
-
-  const size = obj.geometry.boundingSphere.radius * obj.scale.x;
-  zoomTarget = Math.max(size * 1.8, 60);
-
-  const dir = camera.position.clone()
-    .sub(controls.target)
-    .normalize();
-
-  camera.position.copy(
-    obj.position.clone().add(
-      dir.multiplyScalar(zoomTarget * 1.4)
-    )
-  );
+  closeAll();
 
   const mt = document.getElementById("meetingText");
   if (mt) {
@@ -853,28 +882,24 @@ window.addEventListener("resize",()=>{
 
 
 
-<!-- ⭐ QUICK STAR NAVIGATOR -->
+<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
 <div id="starNav" style="
 position:fixed;
 bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-gap:10px;
+flex-wrap:wrap;
+justify-content:center;
+gap:8px;
+max-width:92%;
 z-index:3000;
 background:rgba(0,0,0,0.55);
 backdrop-filter:blur(6px);
 padding:10px 14px;
 border-radius:16px;
-font-size:12px;
+font-size:11px;
 ">
-  <span class="navDot video" title="Video Stars"></span>
-  <span class="navDot shayari" title="Shayari Stars"></span>
-  <span class="navDot promise" title="Promise Stars"></span>
-  <span class="navDot memory" title="Memory Stars"></span>
-  <span class="navDot aiBirthday" title="AI Birthday"></span>
-  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
-<span style="color:#aaa;font-size:11px;margin-left:8px;">Tap dots to explore stars</span>
 </div>
 
 <style>
