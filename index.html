@@ -166,6 +166,10 @@ function stopVideo(){
 
 /* ================= SUN MEMORY ================= */
 const FIRST_MEET=new Date("2025-09-27");
+const firstMeetingDate = new Date('2025-09-27');
+const today = new Date();
+const daysTogether = Math.floor((today - firstMeetingDate) / (1000 * 60 * 60 * 24));
+
 document.getElementById("meetingText").innerHTML = `Our First Meeting 💛
 27 September 2025
 
