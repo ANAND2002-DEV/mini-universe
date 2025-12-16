@@ -164,24 +164,11 @@ function stopVideo(){
 
 /* ================= CORE STATE ================= */
 let selected=null;
-let lastStarPos=null;
-let lastStarZoom=null;
 function closeAll(){
   stopAudio();
   stopVideo();
-
-  // ⭐ Zoom out from star instead of jumping to Sun
-  if(lastStarPos && lastStarZoom){
-    selected=null;
-    controls.target.copy(lastStarPos);
-    zoomTarget = Math.min(lastStarZoom * 1.8, ZOOM_MAX);
-    lastStarPos=null;
-    lastStarZoom=null;
-  }else{
-    selected=null;
-    controls.target.set(0,0,0);
-  }
-
+  selected=null;
+  controls.target.set(0,0,0);
   document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 window.closeAll=closeAll;
@@ -203,13 +190,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.08; // smoother camera damping
+controls.dampingFactor=0.15;
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.045; // smoother zoom
+const ZOOM_SMOOTH = 0.08;
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
@@ -390,6 +377,53 @@ STAR_RINGS.forEach((ring,ri)=>{
 // ================= SAFE STAR ROLE PATCH (NO EMISSIVE) =================
 // Compatible with MeshBasicMaterial
 // Will NOT stop execution or break solar system
+
+
+// ================= QUICK STAR NAV =================
+const starIndexMap = {
+  video: [],
+  shayari: [],
+  promise: [],
+  memory: [],
+  birthday_ai: [],
+  birthday_yoto: []
+};
+
+memoryStars.forEach(star=>{
+  const r = star.userData.role;
+  if(starIndexMap[r]) starIndexMap[r].push(star);
+});
+
+const navState = {};
+Object.keys(starIndexMap).forEach(k=>navState[k]=0);
+
+function focusStarByRole(role){
+  const list = starIndexMap[role];
+  if(!list || !list.length) return;
+
+  const star = list[navState[role] % list.length];
+  navState[role]++;
+
+  selected = star;
+  controls.target.copy(star.position);
+
+  const size = 20;
+  zoomTarget = Math.max(size * 3.5, 120);
+}
+
+// Attach clicks
+window.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("#starNav .navDot").forEach(dot=>{
+    dot.addEventListener("click",()=>{
+      if(dot.classList.contains("video")) focusStarByRole("video");
+      if(dot.classList.contains("shayari")) focusStarByRole("shayari");
+      if(dot.classList.contains("promise")) focusStarByRole("promise");
+      if(dot.classList.contains("memory")) focusStarByRole("memory");
+      if(dot.classList.contains("aiBirthday")) focusStarByRole("birthday_ai");
+      if(dot.classList.contains("yotoBirthday")) focusStarByRole("birthday_yoto");
+    });
+  });
+});
 
 const STAR_CONFIG = {
   video: 5,
@@ -612,15 +646,7 @@ This universe exists to remember every single one of them.`;
   return;
 }
 
-    selected = obj;
-
-    // 🔥 AUTO FULL ZOOM ON CLICK (planet & sun)
-    const size = obj.geometry
-      ? obj.geometry.boundingSphere.radius * obj.scale.x
-      : 40;
-
-    zoomTarget = Math.max(size * 3.2, 80);
-
+    selected=obj;
     ZOOM_MIN = 60;
     ZOOM_MAX = 3000;
   }else{
@@ -656,8 +682,6 @@ window.addEventListener("dblclick",(e)=>{
 
   
   if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
-    lastStarPos = obj.position.clone();
-    lastStarZoom = camera.position.distanceTo(controls.target);
     closeAll();
     document.getElementById("shayariText").innerText =
       SHAYARIS[obj.userData.shayariIndex];
@@ -666,8 +690,6 @@ window.addEventListener("dblclick",(e)=>{
   }
 
   if(obj.userData.type==="star" && obj.userData.video){
-    lastStarPos = obj.position.clone();
-    lastStarZoom = camera.position.distanceTo(controls.target);
     playVideo(obj.userData.video);
   }
 });
@@ -765,6 +787,46 @@ window.addEventListener("resize",()=>{
   </div>
 </div>
 
+
+
+<!-- ⭐ QUICK STAR NAVIGATOR -->
+<div id="starNav" style="
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+gap:10px;
+z-index:3000;
+background:rgba(0,0,0,0.55);
+backdrop-filter:blur(6px);
+padding:10px 14px;
+border-radius:16px;
+font-size:12px;
+">
+  <span class="navDot video" title="Video Stars"></span>
+  <span class="navDot shayari" title="Shayari Stars"></span>
+  <span class="navDot promise" title="Promise Stars"></span>
+  <span class="navDot memory" title="Memory Stars"></span>
+  <span class="navDot aiBirthday" title="AI Birthday"></span>
+  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
+</div>
+
+<style>
+.navDot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  cursor:pointer;
+  box-shadow:0 0 6px rgba(255,255,255,0.4);
+}
+.navDot.video{background:#1f6fff;}
+.navDot.shayari{background:#d63384;}
+.navDot.promise{background:#b8860b;}
+.navDot.memory{background:#ff2a2a;}
+.navDot.aiBirthday{background:#ff77cc;}
+.navDot.yotoBirthday{background:#7b3fe4;}
+</style>
 
 </body>
 </html>
