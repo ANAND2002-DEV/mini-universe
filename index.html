@@ -69,16 +69,25 @@ html,body{
   margin:4px 0;
 }
 .dot{
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  margin-right:8px;
-}
-.blue{background:#66ccff;}
-.gold{background:#ffcc66;}
-.pink{background:#ff66aa;}
-.green{background:#66ffaa;}
-.purple{background:#cc66ff;}
+ /* ===== STAR LEGEND COLORS (NEW SYSTEM) ===== */
+.dot.video{background:#1f6fff;}        /* Video Memories */
+.dot.shayari{background:#d63384;}      /* Shayaris */
+.dot.promise{background:#b8860b;}      /* Promises */
+.dot.memory{background:#ff2a2a;}       /* Our Memories */
+.dot.aiBirthday{background:#ff77cc;}   /* AI Birthday */
+.dot.yotoBirthday{background:#7b3fe4;} /* YOTO Birthday */
+
+  <!-- ⭐ STAR LEGEND -->
+<div id="legend">
+  <h3>Star Legend</h3>
+
+  <div><span class="dot video"></span> Video Memories</div>
+  <div><span class="dot shayari"></span> Shayaris</div>
+  <div><span class="dot promise"></span> Promises</div>
+  <div><span class="dot memory"></span> Our Memories</div>
+  <div><span class="dot aiBirthday"></span> AI Birthday</div>
+  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
+</div>
 
 </style>
 
