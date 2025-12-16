@@ -190,13 +190,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.15;
+controls.dampingFactor=0.08; // smoother camera damping
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
+const ZOOM_SMOOTH = 0.045; // smoother zoom
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
@@ -408,7 +408,17 @@ function focusStarByRole(role){
   controls.target.copy(star.position);
 
   const size = 20;
-  zoomTarget = Math.max(size * 3.5, 120);
+  zoomTarget = Math.max(size * 1.6, 50);
+
+  const dir = camera.position.clone()
+    .sub(controls.target)
+    .normalize();
+
+  camera.position.copy(
+    star.position.clone().add(
+      dir.multiplyScalar(zoomTarget * 1.4)
+    )
+  );
 }
 
 // Attach clicks
@@ -646,9 +656,27 @@ This universe exists to remember every single one of them.`;
   return;
 }
 
-    selected=obj;
-    ZOOM_MIN = 60;
-    ZOOM_MAX = 3000;
+    selected = obj;
+
+    // 🚀 FORCE FULL ZOOM + TRACK ON SINGLE CLICK (planet / sun / star)
+    const size = obj.geometry
+      ? obj.geometry.boundingSphere.radius * obj.scale.x
+      : 40;
+
+    zoomTarget = Math.max(size * 1.6, 50);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
+    );
+
+    ZOOM_MIN = 40;
+    ZOOM_MAX = 2500;
   }else{
     closeAll();
     zoomTarget = camera.position.distanceTo(controls.target);
