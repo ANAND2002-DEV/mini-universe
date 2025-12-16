@@ -315,7 +315,14 @@ const videos=[
 
 const memoryStars=[];
 
-const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
+// STAR_COLORS kept ONLY for visual continuity (STEP-1)
+const STAR_COLORS=[
+  0x66ccff, // video
+  0xffcc66, // promise
+  0xff66aa, // shayari
+  0x66ffaa, // voice / memory (legacy)
+  0xcc66ff  // hidden / legacy
+];
 
 // ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
 const GOLDEN_HEX = 0xffcc66;
@@ -350,6 +357,15 @@ Tere bina sab kuchh adhoora sa lagta hai,
 Tu saath ho to har lamha pura sa lagta hai.`
 ];
 
+
+// ================= STAR ROLE CONFIG (STEP-1 FOUNDATION) =================
+const STAR_ROLE_SEQUENCE = [
+  ...Array(5).fill("video"),      // 5 video stars
+  ...Array(4).fill("promise"),    // 4 promise stars
+  ...Array(8).fill("shayari"),    // 8 shayari stars
+  // remaining stars default to "memory" (flexible)
+];
+
 const STAR_RINGS=[
   {radius:1650,count:8},
   {radius:1850,count:9},
@@ -358,14 +374,22 @@ const STAR_RINGS=[
 
 STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
+    const role = STAR_ROLE_SEQUENCE[memoryStars.length] || "memory";
+
     const star=new THREE.Mesh(
       new THREE.SphereGeometry(8,20,20),
       new THREE.MeshBasicMaterial({
-        color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
+        color:STAR_COLORS[(i+ri)%STAR_COLORS.length] // visual unchanged (STEP-1)
       })
     );
-    star.userData.type="star";
-    star.userData.video=videos[memoryStars.length]||null;
+
+    star.userData.type = "star";
+    star.userData.role = role;
+
+    // attach video ONLY for video-role stars (keeps behavior same)
+    star.userData.video = (role === "video")
+      ? videos[memoryStars.length] || null
+      : null;
 
     // Invisible hit area
     const hit=new THREE.Mesh(
@@ -388,7 +412,7 @@ STAR_RINGS.forEach((ring,ri)=>{
 });
 
 
-// ===== Assign shayaris ONLY to golden stars (SAFE) =====
+// ===== Assign shayaris ONLY to SHAYARI-role stars (STEP-1, color unchanged) =====
 let goldenIndex = 0;
 memoryStars.forEach(star => {
   if (
