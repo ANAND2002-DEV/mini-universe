@@ -670,6 +670,7 @@ renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
 window.addEventListener("click",(e)=>{
+  if(e.detail > 1) return; // allow dblclick to handle Sun message
   if(isDragging) return;
 
   stopAudio();
@@ -689,25 +690,27 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
+  closeAll();
 
-  // ☀️ SINGLE CLICK → focus & FULL zoom (NO modal)
-  selected = obj;
-  lastFocus = obj;
-  lastFocusZoom = zoomTarget;
+  const mt = document.getElementById("meetingText");
+  if (mt) {
+    const firstMeetingDate = new Date("2025-09-27");
+    const today = new Date();
+    const daysTogether = Math.floor(
+      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+    );
 
-  const size = obj.geometry.boundingSphere.radius * obj.scale.x;
-  zoomTarget = Math.max(size * 1.8, 60);
+    mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
 
-  const dir = camera.position.clone()
-    .sub(controls.target)
-    .normalize();
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
 
-  camera.position.copy(
-    obj.position.clone().add(
-      dir.multiplyScalar(zoomTarget * 1.4)
-    )
-  );
+This universe exists to remember every single one of them.`;
+  }
 
+  document.getElementById("sunModal").style.display = "flex";
   return;
 }
 
@@ -751,7 +754,7 @@ window.addEventListener("dblclick",(e)=>{
   raycaster.setFromCamera(mouse,camera);
 
   const hits=raycaster.intersectObjects(
-    [...planets.map(p=>p.mesh),...memoryStars],
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
     true
   );
   if(!hits.length) return;
@@ -759,30 +762,7 @@ window.addEventListener("dblclick",(e)=>{
   let obj=hits[0].object;
   if(obj.userData.type==="starHit") obj=obj.parent;
 
-  if(obj.userData.type === "sun"){
-    const mt = document.getElementById("meetingText");
-    if (mt) {
-      const firstMeetingDate = new Date("2025-09-27");
-      const today = new Date();
-      const daysTogether = Math.floor(
-        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
-      );
-
-      mt.innerHTML =
-`Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days
-of memories, smiles, fights, care, and love.
-
-This universe exists to remember every single one of them.`;
-    }
-
-    document.getElementById("sunModal").style.display = "flex";
-    return;
-  }
-
-if(obj.userData.type==="planet"){
+  if(obj.userData.type==="planet"){
     const i=obj.userData.info;
     document.getElementById("planetTitle").innerText=i.name;
     document.getElementById("planetImg").src="./assets/photos/"+i.photo;
