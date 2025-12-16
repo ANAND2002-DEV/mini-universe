@@ -190,13 +190,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.15;
+controls.dampingFactor=0.08; // smoother camera damping (changed only value)
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
+const ZOOM_SMOOTH = 0.045; // smoother zoom (changed only value)
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
