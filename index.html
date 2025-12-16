@@ -746,7 +746,7 @@ function animate(){
   requestAnimationFrame(animate);
 
   planets.forEach(p=>{
-    p.angle+=0.00035*p.speed;
+    p.angle+=0.00055*p.speed; // slightly faster orbit to keep system lively
     p.mesh.position.set(
       Math.cos(p.angle)*p.dist,
       (p.dist % 2 === 0 ? 10 : -10),
