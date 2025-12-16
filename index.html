@@ -109,8 +109,6 @@ html,body{
   <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
 </div>
 
-<div id="meetingText" style="display:none;"></div>
-
 <!-- 🪐 PLANET PHOTO -->
 <div id="planetModal" class="modal">
   <div class="modal-card">
@@ -163,18 +161,6 @@ function stopVideo(){
   videoPlayer.currentTime=0;
   videoPlayer.src="";
 }
-
-/* ================= SUN MEMORY ================= */
-const FIRST_MEET=new Date("2025-09-27");
-const firstMeetingDate = new Date('2025-09-27');
-const today = new Date();
-const daysTogether = Math.floor((today - firstMeetingDate) / (1000 * 60 * 60 * 24));
-
-document.getElementById("meetingText").innerHTML = `Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days of memories, smiles, fights, care, and love.
-And this universe exists to remember every single one of them.`;
 
 /* ================= CORE STATE ================= */
 let selected=null;
