@@ -12,8 +12,6 @@ html,body{
   background:black;
   font-family:Arial,sans-serif;
 }
-
-/* ===== MODALS ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -48,7 +46,7 @@ html,body{
   color:#ffd27d;
 }
 
-/* ===== STAR LEGEND ===== */
+/* ⭐ STAR LEGEND */
 #legend{
   position:fixed;
   bottom:20px;
@@ -76,14 +74,11 @@ html,body{
   border-radius:50%;
   margin-right:8px;
 }
-
-/* Legend colors */
-.dot.video{background:#1f6fff;}        /* Video Memories */
-.dot.shayari{background:#d63384;}      /* Shayaris */
-.dot.promise{background:#b8860b;}      /* Promises */
-.dot.memory{background:#ff2a2a;}       /* Our Memories */
-.dot.aiBirthday{background:#ff77cc;}   /* AI Birthday */
-.dot.yotoBirthday{background:#7b3fe4;} /* YOTO Birthday */
+.blue{background:#66ccff;}
+.gold{background:#ffcc66;}
+.pink{background:#ff66aa;}
+.green{background:#66ffaa;}
+.purple{background:#cc66ff;}
 
 </style>
 
@@ -101,15 +96,22 @@ html,body{
 <!-- ⭐ STAR LEGEND -->
 <div id="legend">
   <h3>Star Legend</h3>
-  <div><span class="dot video"></span> Video Memories</div>
-  <div><span class="dot shayari"></span> Shayaris</div>
-  <div><span class="dot promise"></span> Promises</div>
-  <div><span class="dot memory"></span> Our Memories</div>
-  <div><span class="dot aiBirthday"></span> AI Birthday</div>
-  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
+  <div><span class="dot blue"></span> Video Memories</div>
+  <div><span class="dot gold"></span> Promises</div>
+  <div><span class="dot pink"></span> Shayaris</div>
+  <div><span class="dot green"></span> Voice Notes</div>
+  <div><span class="dot purple"></span> Hidden Memories</div>
 </div>
 
-<div id="meetingText" style="display:none;"></div>
+
+<!-- 🌞 SUN -->
+<div id="sunModal" class="modal">
+  <div class="modal-card">
+    <h2>🌞 Our First Meeting</h2>
+    <p id="meetingText"></p>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
 
 <!-- 🪐 PLANET PHOTO -->
 <div id="planetModal" class="modal">
@@ -384,74 +386,17 @@ STAR_RINGS.forEach((ring,ri)=>{
     memoryStars.push(star);
   }
 });
-// ================= SAFE STAR ROLE PATCH (NO EMISSIVE) =================
-// Compatible with MeshBasicMaterial
-// Will NOT stop execution or break solar system
 
-const STAR_CONFIG = {
-  video: 5,
-  shayari: 8,
-  promise: 4,
-  memory: "flexible",
-  birthday_ai: 1,
-  birthday_yoto: 1
-};
-
-// Build role list
-const STAR_ROLE_LIST = [];
-Object.entries(STAR_CONFIG).forEach(([role, count]) => {
-  if (count === "flexible") return;
-  for (let i = 0; i < count; i++) STAR_ROLE_LIST.push(role);
-});
-
-// Assign roles
-memoryStars.forEach((star, index) => {
-  star.userData.role = STAR_ROLE_LIST[index] || "memory";
-});
-
-// Apply colors + size ONLY (NO emissive)
-memoryStars.forEach(star => {
-  const role = star.userData.role;
-
-  if (role === "video") {
-    star.material.color.setHex(0x1f6fff); // dark sky blue
-  }
-
-  if (role === "shayari") {
-    star.material.color.setHex(0xd63384); // dark pink
-  }
-
-  if (role === "promise") {
-    star.material.color.setHex(0xb8860b); // dark golden
-  }
-
-  if (role === "memory") {
-    star.material.color.setHex(0xff2a2a); // bright red
-  }
-
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc); // lotus pink
-    star.scale.setScalar(1.6);
-  }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4); // lotus purple
-    star.scale.setScalar(1.6);
-  }
-});
-
-
-// ===== Assign shayaris ONLY to golden stars (SAFE) =====
-let goldenIndex = 0;
+// ===== Assign shayaris ONLY to shayari-role stars (FIXED, SAFE) =====
+let shayariIndex = 0;
 memoryStars.forEach(star => {
   if (
-    star.material &&
-    star.material.color &&
-    star.material.color.getHex() === PINK_HEX &&
-    goldenIndex < SHAYARIS.length
+    star.userData &&
+    star.userData.role === "shayari" &&
+    shayariIndex < SHAYARIS.length
   ) {
-    star.userData.shayariIndex = goldenIndex;
-    goldenIndex++;
+    star.userData.shayariIndex = shayariIndex;
+    shayariIndex++;
   }
 });
 
