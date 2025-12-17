@@ -93,6 +93,36 @@ html,body{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
+
+// ===== BIRTHDAY COUNTDOWN HELPERS =====
+function getBirthdayCountdown(dateStr){
+  // dateStr format: "04 July" or "23 August"
+  const [day, monthName] = dateStr.split(" ");
+  const months = {
+    January:0, February:1, March:2, April:3, May:4, June:5,
+    July:6, August:7, September:8, October:9, November:10, December:11
+  };
+
+  const now = new Date();
+  let year = now.getFullYear();
+  let target = new Date(year, months[monthName], parseInt(day));
+
+  if(target < now){
+    target = new Date(year + 1, months[monthName], parseInt(day));
+  }
+
+  const diff = target - now;
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff / (1000*60*60)) % 24);
+  const minutes = Math.floor((diff / (1000*60)) % 60);
+
+  if(days === 0 && hours === 0 && minutes <= 1){
+    return "🎉 Today is the day 💗";
+  }
+
+  return `⏳ ${days} days • ${hours} hours • ${minutes} minutes left`;
+}
+
 </script>
 </head>
 
@@ -850,7 +880,8 @@ if(obj.userData.type==="planet"){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     document.getElementById("birthdayTitle").innerText = "🎂 " + activeBirthday.name + "'s Birthday";
-    document.getElementById("birthdayDate").innerText = "📅 " + activeBirthday.date;
+    document.getElementById("birthdayDate").innerText =
+      "📅 " + activeBirthday.date + "\n" + getBirthdayCountdown(activeBirthday.date);
     document.getElementById("birthdayInfoModal").style.display = "flex";
     return;
   }
