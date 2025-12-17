@@ -127,21 +127,6 @@ html,body{
 </div>
 
 <script type="module">
-
-// ===== Birthday Countdown Helper (SAFE) =====
-function getBirthdayCountdownDMY(day, monthIndex){
-  const now = new Date();
-  let target = new Date(now.getFullYear(), monthIndex, day, 0, 0, 0);
-  if(target < now){
-    target = new Date(now.getFullYear()+1, monthIndex, day, 0, 0, 0);
-  }
-  const diff = target - now;
-  const d = Math.floor(diff / (1000*60*60*24));
-  const h = Math.floor((diff / (1000*60*60)) % 24);
-  const m = Math.floor((diff / (1000*60)) % 60);
-  return `${d} days • ${h} hours • ${m} minutes`;
-}
-
 import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
@@ -181,6 +166,7 @@ function stopVideo(){
 let selected=null;
 let lastFocus=null;
 let lastFocusZoom=null;
+let sunClickTimer=null;
 function closeAll(){
   stopAudio();
   stopVideo();
@@ -447,6 +433,52 @@ function focusStarByRole(role){
   );
 }
 
+// ================= STAR NUMBER NAV (1–25) =================
+window.addEventListener("DOMContentLoaded",()=>{
+  const nav = document.getElementById("starNav");
+  if(!nav) return;
+
+  memoryStars.forEach((star, index)=>{
+    const btn = document.createElement("div");
+    btn.innerText = index + 1;
+    btn.style.width = "22px";
+    btn.style.height = "22px";
+    btn.style.borderRadius = "50%";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.style.cursor = "pointer";
+    btn.style.fontSize = "11px";
+    btn.style.color = "#fff";
+    btn.style.background = "#" + star.material.color.getHexString();
+    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
+
+    btn.addEventListener("click",()=>{
+      selected = star;
+      lastFocus = star;
+      lastFocusZoom = zoomTarget;
+
+      controls.target.copy(star.position);
+
+      const size = 20;
+      zoomTarget = Math.max(size * 1.6, 50);
+
+      const dir = camera.position.clone()
+        .sub(controls.target)
+        .normalize();
+
+      camera.position.copy(
+        star.position.clone().add(
+          dir.multiplyScalar(zoomTarget * 1.4)
+        )
+      );
+    });
+
+    nav.appendChild(btn);
+  });
+});
+
+
 // Attach clicks
 window.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll("#starNav .navDot").forEach(dot=>{
@@ -639,6 +671,7 @@ renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
 window.addEventListener("click",(e)=>{
+  if(e.detail > 1) return; // allow dblclick to handle Sun message
   if(isDragging) return;
 
   stopAudio();
@@ -658,27 +691,29 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
-  closeAll();
 
-  const mt = document.getElementById("meetingText");
-  if (mt) {
-    const firstMeetingDate = new Date("2025-09-27");
-    const today = new Date();
-    const daysTogether = Math.floor(
-      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+  // ☀️ SINGLE CLICK → zoom only (wait to detect double click)
+  clearTimeout(sunClickTimer);
+
+  sunClickTimer = setTimeout(()=>{
+    selected = obj;
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    const size = obj.geometry.boundingSphere.radius * obj.scale.x;
+    zoomTarget = Math.max(size * 1.8, 60);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
     );
+  }, 220);
 
-    mt.innerHTML =
-`Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days
-of memories, smiles, fights, care, and love.
-
-This universe exists to remember every single one of them.`;
-  }
-
-  document.getElementById("sunModal").style.display = "flex";
   return;
 }
 
@@ -722,7 +757,7 @@ window.addEventListener("dblclick",(e)=>{
   raycaster.setFromCamera(mouse,camera);
 
   const hits=raycaster.intersectObjects(
-    [...planets.map(p=>p.mesh),...memoryStars],
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
     true
   );
   if(!hits.length) return;
@@ -730,7 +765,32 @@ window.addEventListener("dblclick",(e)=>{
   let obj=hits[0].object;
   if(obj.userData.type==="starHit") obj=obj.parent;
 
-  if(obj.userData.type==="planet"){
+  if(obj.userData.type === "sun"){
+    clearTimeout(sunClickTimer);
+
+    const mt = document.getElementById("meetingText");
+    if (mt) {
+      const firstMeetingDate = new Date("2025-09-27");
+      const today = new Date();
+      const daysTogether = Math.floor(
+        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+      );
+
+      mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+    }
+
+    document.getElementById("sunModal").style.display = "flex";
+    return;
+  }
+
+if(obj.userData.type==="planet"){
     const i=obj.userData.info;
     document.getElementById("planetTitle").innerText=i.name;
     document.getElementById("planetImg").src="./assets/photos/"+i.photo;
@@ -851,28 +911,24 @@ window.addEventListener("resize",()=>{
 
 
 
-<!-- ⭐ QUICK STAR NAVIGATOR -->
+<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
 <div id="starNav" style="
 position:fixed;
 bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-gap:10px;
+flex-wrap:wrap;
+justify-content:center;
+gap:8px;
+max-width:92%;
 z-index:3000;
 background:rgba(0,0,0,0.55);
 backdrop-filter:blur(6px);
 padding:10px 14px;
 border-radius:16px;
-font-size:12px;
+font-size:11px;
 ">
-  <span class="navDot video" title="Video Stars"></span>
-  <span class="navDot shayari" title="Shayari Stars"></span>
-  <span class="navDot promise" title="Promise Stars"></span>
-  <span class="navDot memory" title="Memory Stars"></span>
-  <span class="navDot aiBirthday" title="AI Birthday"></span>
-  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
-<span style="color:#aaa;font-size:11px;margin-left:8px;">Tap dots to explore stars</span>
 </div>
 
 <style>
