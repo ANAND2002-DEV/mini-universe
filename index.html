@@ -816,6 +816,28 @@ This universe exists to remember every single one of them.`;
     document.getElementById("sunModal").style.display = "flex";
     return;
   }
+// 🎂 BIRTHDAY STAR DOUBLE CLICK
+if (
+  obj.userData.type === "star" &&
+  (obj.userData.role === "birthday_ai" ||
+   obj.userData.role === "birthday_yoto")
+) {
+  const name =
+    obj.userData.role === "birthday_ai"
+      ? "Sneha"
+      : "Anand";
+
+  document.getElementById("birthdayTitle").innerText =
+    "🎂 " + name + "'s Birthday";
+
+  document.getElementById("birthdayDate").innerText =
+    obj.userData.role === "birthday_ai"
+      ? "📅 4 July"
+      : "📅 23 August";
+
+  document.getElementById("birthdayInfoModal").style.display = "flex";
+  return;
+}
 
 
   // 💛 PROMISE STAR DOUBLE CLICK
