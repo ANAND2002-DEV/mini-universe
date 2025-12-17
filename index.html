@@ -391,6 +391,11 @@ STAR_RINGS.forEach((ring,ri)=>{
 // Will NOT stop execution or break solar system
 
 
+// ===== TRIM TO 24 STARS (REMOVE STAR 25) =====
+if (memoryStars.length > 24) {
+  const extra = memoryStars.pop();
+  scene.remove(extra);
+}
 // ================= QUICK STAR NAV =================
 const starIndexMap = {
   video: [],
@@ -514,6 +519,20 @@ memoryStars.forEach((star, index) => {
 });
 
 /* ================= PROMISE DATA (MODULE SCOPE) ================= */
+/* ================= BIRTHDAY STARS ================= */
+const BIRTHDAYS = {
+  22: {
+    title: "Sneha’s Birthday 🎂",
+    date: "4 July",
+    message: "A day that deserves its own star."
+  },
+  23: {
+    title: "Anand’s Birthday 🎂",
+    date: "23 August",
+    message: "The universe celebrates you today."
+  }
+};
+
 const PROMISES = [
   { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
   { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
@@ -563,7 +582,44 @@ memoryStars.forEach(star => {
 });
 
 
+/* ================= OUR MEMORIES ================= */
+const MEMORIES = [
+  {
+    title: "First Message",
+    date: "27 September 2025",
+    text: "The day everything quietly started.\nOne message… and a whole universe began."
+  },
+  {
+    title: "First Call",
+    date: "1 October 2025",
+    text: "Vo pehli awaaz.\nThodi ghabrahat, thoda sukoon —\npar dil ne pehchaan liya tha."
+  },
+  {
+    title: "First I Love You",
+    date: "2 October 2025",
+    text: "Lafz sirf teen the,\npar unke baad kuch bhi pehle jaisa nahi raha."
+  },
+  {
+    title: "First Fight",
+    date: "9 October 2025",
+    text: "Baatein kam ho gayi thi,\npar fikr aur mohabbat dono zyada thi."
+  },
+  {
+    title: "The Silence",
+    date: "10 December 2025 – 17 December 2025",
+    text: "Jab baat nahi hui,\npar yaadein bohot zyada bol rahi thi.\nHar din thoda bhaari tha,\npar dil phir bhi wahi rukka raha."
+  }
+];
+
 // ===== Assign shayaris ONLY to shayari-role stars (FIXED) =====
+/* ===== ASSIGN MEMORIES TO MEMORY STARS ===== */
+let memoryIndex = 0;
+memoryStars.forEach(star => {
+  if (star.userData.role === "memory" && memoryIndex < MEMORIES.length) {
+    star.userData.memoryIndex = memoryIndex++;
+  }
+});
+
 let shayariIndex = 0;
 memoryStars.forEach(star => {
   if (
@@ -839,6 +895,31 @@ if(obj.userData.type==="planet"){
     document.getElementById("promiseTitle").innerText = p.title;
     document.getElementById("promiseText").innerText = p.text;
     document.getElementById("promiseModal").style.display = "flex";
+    return;
+  }
+
+  /* ===== MEMORY STAR OPEN ===== */
+  if(obj.userData.type==="star" && obj.userData.memoryIndex !== undefined){
+    const m = MEMORIES[obj.userData.memoryIndex];
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.getElementById("shayariText").innerText =
+      m.title + "\n" + m.date + "\n\n" + m.text;
+    document.getElementById("shayariModal").style.display = "flex";
+    return;
+  }
+
+  /* ===== BIRTHDAY STAR OPEN ===== */
+  const idx = memoryStars.indexOf(obj);
+  if(BIRTHDAYS[idx]){
+    const b = BIRTHDAYS[idx];
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.getElementById("shayariText").innerText =
+      b.title + "\n" + b.date + "\n\n" + b.message;
+    document.getElementById("shayariModal").style.display = "flex";
     return;
   }
 
