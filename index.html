@@ -162,33 +162,6 @@ function stopVideo(){
   videoPlayer.src="";
 }
 
-
-/* ================= PROMISE STAR DATA ================= */
-const PROMISES = [
-  {
-    owner: "Sneha",
-    text: `I promise that I will never cheat on you.`
-  },
-  {
-    owner: "Sneha",
-    text: `I promise that I will always love you
-and take care of you, no matter what.`
-  },
-  {
-    owner: "Anand",
-    text: `I promise that I will never leave you,
-no matter how difficult life becomes.`
-  },
-  {
-    owner: "Anand",
-    text: `I promise that if life ever takes us in different directions,
-my heart will still belong to you,
-and I will never choose anyone else in your place.`
-  }
-];
-
-let activePromise = null;
-
 /* ================= CORE STATE ================= */
 let selected=null;
 let lastFocus=null;
@@ -525,9 +498,8 @@ const STAR_CONFIG = {
   shayari: 8,
   promise: 4,
   memory: "flexible",
-  birthday_ai: 1,
-  birthday_yoto: 1
-};
+  
+  };
 
 // Build role list
 const STAR_ROLE_LIST = [];
@@ -817,24 +789,6 @@ This universe exists to remember every single one of them.`;
     return;
   }
 
-
-  // 💛 PROMISE STAR DOUBLE CLICK
-  if(
-    obj.userData.type === "star" &&
-    obj.userData.role === "promise"
-  ){
-    activePromise = PROMISES[obj.userData.promiseIndex || 0];
-
-    document.getElementById("promiseTitle").innerText =
-      "💛 Promise from " + activePromise.owner;
-
-    document.getElementById("promiseText").innerText =
-      activePromise.text;
-
-    document.getElementById("promiseModal").style.display = "flex";
-    return;
-  }
-
 if(obj.userData.type==="planet"){
     const i=obj.userData.info;
     document.getElementById("planetTitle").innerText=i.name;
@@ -991,16 +945,6 @@ font-size:11px;
 .navDot.aiBirthday{background:#ff77cc;}
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
-
-
-<!-- 💛 PROMISE MODAL -->
-<div id="promiseModal" class="modal">
-  <div class="modal-card">
-    <h2 id="promiseTitle"></h2>
-    <p id="promiseText" style="white-space:pre-line; line-height:1.6;"></p>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
 
 </body>
 </html>
