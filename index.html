@@ -78,12 +78,9 @@ html,body{
 }
 
 /* Legend colors */
-.dot.video{background:#1f6fff;}        /* Video Memories */
-.dot.shayari{background:#d63384;}      /* Shayaris */
+.dot.shayari{background:#d63384;}      /* Shayari & Feelings */
 .dot.promise{background:#b8860b;}      /* Promises */
-.dot.memory{background:#ff2a2a;}       /* Our Memories */
-.dot.aiBirthday{background:#ff77cc;}   /* AI Birthday */
-.dot.yotoBirthday{background:#7b3fe4;} /* YOTO Birthday */
+.dot.memory{background:#ff2a2a;}       /* Our Moments */
 
 </style>
 
@@ -98,16 +95,15 @@ html,body{
 
 <body>
 
-<!-- ⭐ STAR LEGEND -->
+
+<!-- ⭐ MINIMAL STAR LEGEND -->
 <div id="legend">
-  <h3>Star Legend</h3>
-  <div><span class="dot video"></span> Video Memories</div>
-  <div><span class="dot shayari"></span> Shayaris</div>
+  <h3>Star Guide</h3>
+  <div><span class="dot memory"></span> Our Moments</div>
+  <div><span class="dot shayari"></span> Shayari & Feelings</div>
   <div><span class="dot promise"></span> Promises</div>
-  <div><span class="dot memory"></span> Our Memories</div>
-  <div><span class="dot aiBirthday"></span> AI Birthday</div>
-  <div><span class="dot yotoBirthday"></span> YOTO Birthday</div>
 </div>
+
 
 <!-- 🪐 PLANET PHOTO -->
 <div id="planetModal" class="modal">
@@ -513,6 +509,24 @@ memoryStars.forEach((star, index) => {
   star.userData.role = STAR_ROLE_LIST[index] || "memory";
 });
 
+/* ================= PROMISE DATA (MODULE SCOPE) ================= */
+const PROMISES = [
+  { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
+  { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
+  { title: "Anand’s Promise", text: "I promise that I will never leave you, no matter how difficult life becomes." },
+  { title: "Anand’s Promise", text: "I promise that if life ever takes us in different directions, my heart will still belong to you, and I will never choose anyone else in your place." }
+];
+
+/* ===== APPLY STRONG GOLDEN GLOW TO PROMISE STARS ===== */
+let promiseIndex = 0;
+memoryStars.forEach(star => {
+  if (star.userData.role === "promise") {
+    star.userData.promiseIndex = promiseIndex++;
+    star.material.color.setHex(0xffd36a); // bright gold
+    star.scale.setScalar(1.45);
+  }
+});
+
 // Apply colors + size ONLY (NO emissive)
 memoryStars.forEach(star => {
   const role = star.userData.role;
@@ -809,7 +823,7 @@ if(obj.userData.type==="planet"){
   }
 
 
-  /* ===== PROMISE STAR OPEN (MERGED) ===== */
+  /* ===== PROMISE STAR OPEN ===== */
   if(obj.userData.type==="star" && obj.userData.role==="promise"){
     const p = PROMISES[obj.userData.promiseIndex];
     if(!p) return;
@@ -976,28 +990,6 @@ font-size:11px;
     <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
-
-
-<script>
-/* ================= PROMISE DATA ================= */
-const PROMISES = [
-  { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
-  { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
-  { title: "Anand’s Promise", text: "I promise that I will never leave you, no matter how difficult life becomes." },
-  { title: "Anand’s Promise", text: "I promise that if life ever takes us in different directions, my heart will still belong to you, and I will never choose anyone else in your place." }
-];
-
-/* ===== APPLY STRONG GOLDEN GLOW TO PROMISE STARS ===== */
-let promiseIndex = 0;
-memoryStars.forEach(star => {
-  if (star.userData.role === "promise") {
-    star.userData.promiseIndex = promiseIndex++;
-    star.material.color.setHex(0xffd36a);
-    star.scale.setScalar(1.45);
-  }
-});
-
-</script>
 
 </body>
 </html>
