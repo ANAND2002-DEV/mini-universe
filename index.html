@@ -93,36 +93,6 @@ html,body{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
-
-// ===== BIRTHDAY COUNTDOWN HELPERS =====
-function getBirthdayCountdown(dateStr){
-  // dateStr format: "04 July" or "23 August"
-  const [day, monthName] = dateStr.split(" ");
-  const months = {
-    January:0, February:1, March:2, April:3, May:4, June:5,
-    July:6, August:7, September:8, October:9, November:10, December:11
-  };
-
-  const now = new Date();
-  let year = now.getFullYear();
-  let target = new Date(year, months[monthName], parseInt(day));
-
-  if(target < now){
-    target = new Date(year + 1, months[monthName], parseInt(day));
-  }
-
-  const diff = target - now;
-  const days = Math.floor(diff / (1000*60*60*24));
-  const hours = Math.floor((diff / (1000*60*60)) % 24);
-  const minutes = Math.floor((diff / (1000*60)) % 60);
-
-  if(days === 0 && hours === 0 && minutes <= 1){
-    return "🎉 Today is the day 💗";
-  }
-
-  return `⏳ ${days} days • ${hours} hours • ${minutes} minutes left`;
-}
-
 </script>
 </head>
 
@@ -157,6 +127,21 @@ function getBirthdayCountdown(dateStr){
 </div>
 
 <script type="module">
+
+// ===== Birthday Countdown Helper (SAFE) =====
+function getBirthdayCountdownDMY(day, monthIndex){
+  const now = new Date();
+  let target = new Date(now.getFullYear(), monthIndex, day, 0, 0, 0);
+  if(target < now){
+    target = new Date(now.getFullYear()+1, monthIndex, day, 0, 0, 0);
+  }
+  const diff = target - now;
+  const d = Math.floor(diff / (1000*60*60*24));
+  const h = Math.floor((diff / (1000*60*60)) % 24);
+  const m = Math.floor((diff / (1000*60)) % 60);
+  return `${d} days • ${h} hours • ${m} minutes`;
+}
+
 import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
@@ -196,7 +181,6 @@ function stopVideo(){
 let selected=null;
 let lastFocus=null;
 let lastFocusZoom=null;
-let sunClickTimer=null;
 function closeAll(){
   stopAudio();
   stopVideo();
@@ -350,46 +334,6 @@ const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 // ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
 const GOLDEN_HEX = 0xffcc66;
 const PINK_HEX = 0xff66aa;
-
-// ===== BIRTHDAY DATA =====
-const AI_BIRTHDAY = {
-  name: "Sneha",
-  date: "04 July",
-  message: `Aaj sirf tumhara din nahi hai 💗
-Aaj meri poori kaynat ka jashn hai ✨
-
-Tumhari muskaan se
-mere andhere bhi roshan ho jaate hain 🌙
-Aur tumhari awaaz se
-meri har thakaan utar jaati hai 🤍
-
-Is sitare ke neeche bas itna kehna tha 🌸
-Tum meri zindagi ka wo hissa ho
-jiske bina sab kuch adhoora lagta hai 💫
-
-🎂 Happy Birthday, Sneha
-Aaj bhi… aur hamesha bhi 🤍`
-};
-
-const YOTO_BIRTHDAY = {
-  name: "Anand",
-  date: "23 August",
-  message: `Is din sirf main paida nahi hua tha 💜
-Is din se shayad meri zindagi
-tumhara intezaar karna seekh rahi thi ✨
-
-Paida hone se lekar aaj tak 🌙
-maine bahut log dekhe,
-bahut rishte mehsoos kiye,
-par jis shiddat se tumhari kami mehsoos hoti thi…
-wo sirf tum hi ho 🤍
-
-Aaj samajh aata hai 💫
-tum sirf meri mohabbat nahi,
-tum wo jawab ho
-jiska sawaal meri zindagi hamesha thi 🌌`
-};
-
 const SHAYARIS = [
 `Tumhare naam se mohabbat ki hai,
 Tumhare ehsaas se mohabbat ki hai,
@@ -502,52 +446,6 @@ function focusStarByRole(role){
     )
   );
 }
-
-// ================= STAR NUMBER NAV (1–25) =================
-window.addEventListener("DOMContentLoaded",()=>{
-  const nav = document.getElementById("starNav");
-  if(!nav) return;
-
-  memoryStars.forEach((star, index)=>{
-    const btn = document.createElement("div");
-    btn.innerText = index + 1;
-    btn.style.width = "22px";
-    btn.style.height = "22px";
-    btn.style.borderRadius = "50%";
-    btn.style.display = "flex";
-    btn.style.alignItems = "center";
-    btn.style.justifyContent = "center";
-    btn.style.cursor = "pointer";
-    btn.style.fontSize = "11px";
-    btn.style.color = "#fff";
-    btn.style.background = "#" + star.material.color.getHexString();
-    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
-
-    btn.addEventListener("click",()=>{
-      selected = star;
-      lastFocus = star;
-      lastFocusZoom = zoomTarget;
-
-      controls.target.copy(star.position);
-
-      const size = 20;
-      zoomTarget = Math.max(size * 1.6, 50);
-
-      const dir = camera.position.clone()
-        .sub(controls.target)
-        .normalize();
-
-      camera.position.copy(
-        star.position.clone().add(
-          dir.multiplyScalar(zoomTarget * 1.4)
-        )
-      );
-    });
-
-    nav.appendChild(btn);
-  });
-});
-
 
 // Attach clicks
 window.addEventListener("DOMContentLoaded",()=>{
@@ -741,7 +639,6 @@ renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
 window.addEventListener("click",(e)=>{
-  if(e.detail > 1) return; // allow dblclick to handle Sun message
   if(isDragging) return;
 
   stopAudio();
@@ -761,29 +658,27 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
+  closeAll();
 
-  // ☀️ SINGLE CLICK → zoom only (wait to detect double click)
-  clearTimeout(sunClickTimer);
-
-  sunClickTimer = setTimeout(()=>{
-    selected = obj;
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
-
-    const size = obj.geometry.boundingSphere.radius * obj.scale.x;
-    zoomTarget = Math.max(size * 1.8, 60);
-
-    const dir = camera.position.clone()
-      .sub(controls.target)
-      .normalize();
-
-    camera.position.copy(
-      obj.position.clone().add(
-        dir.multiplyScalar(zoomTarget * 1.4)
-      )
+  const mt = document.getElementById("meetingText");
+  if (mt) {
+    const firstMeetingDate = new Date("2025-09-27");
+    const today = new Date();
+    const daysTogether = Math.floor(
+      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
     );
-  }, 220);
 
+    mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+  }
+
+  document.getElementById("sunModal").style.display = "flex";
   return;
 }
 
@@ -827,7 +722,7 @@ window.addEventListener("dblclick",(e)=>{
   raycaster.setFromCamera(mouse,camera);
 
   const hits=raycaster.intersectObjects(
-    [sun,...planets.map(p=>p.mesh),...memoryStars],
+    [...planets.map(p=>p.mesh),...memoryStars],
     true
   );
   if(!hits.length) return;
@@ -835,32 +730,7 @@ window.addEventListener("dblclick",(e)=>{
   let obj=hits[0].object;
   if(obj.userData.type==="starHit") obj=obj.parent;
 
-  if(obj.userData.type === "sun"){
-    clearTimeout(sunClickTimer);
-
-    const mt = document.getElementById("meetingText");
-    if (mt) {
-      const firstMeetingDate = new Date("2025-09-27");
-      const today = new Date();
-      const daysTogether = Math.floor(
-        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
-      );
-
-      mt.innerHTML =
-`Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days
-of memories, smiles, fights, care, and love.
-
-This universe exists to remember every single one of them.`;
-    }
-
-    document.getElementById("sunModal").style.display = "flex";
-    return;
-  }
-
-if(obj.userData.type==="planet"){
+  if(obj.userData.type==="planet"){
     const i=obj.userData.info;
     document.getElementById("planetTitle").innerText=i.name;
     document.getElementById("planetImg").src="./assets/photos/"+i.photo;
@@ -869,24 +739,7 @@ if(obj.userData.type==="planet"){
   }
 
   
-  
-  if(obj.userData.type==="star" && obj.userData.role==="birthday_ai"){
-    activeBirthday = AI_BIRTHDAY;
-  }
-  if(obj.userData.type==="star" && obj.userData.role==="birthday_yoto"){
-    activeBirthday = YOTO_BIRTHDAY;
-  }
-  if(activeBirthday){
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
-    document.getElementById("birthdayTitle").innerText = "🎂 " + activeBirthday.name + "'s Birthday";
-    document.getElementById("birthdayDate").innerText =
-      "📅 " + activeBirthday.date + "\n" + getBirthdayCountdown(activeBirthday.date);
-    document.getElementById("birthdayInfoModal").style.display = "flex";
-    return;
-  }
-
-if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+  if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     closeAll();
@@ -998,24 +851,28 @@ window.addEventListener("resize",()=>{
 
 
 
-<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
+<!-- ⭐ QUICK STAR NAVIGATOR -->
 <div id="starNav" style="
 position:fixed;
 bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:8px;
-max-width:92%;
+gap:10px;
 z-index:3000;
 background:rgba(0,0,0,0.55);
 backdrop-filter:blur(6px);
 padding:10px 14px;
 border-radius:16px;
-font-size:11px;
+font-size:12px;
 ">
+  <span class="navDot video" title="Video Stars"></span>
+  <span class="navDot shayari" title="Shayari Stars"></span>
+  <span class="navDot promise" title="Promise Stars"></span>
+  <span class="navDot memory" title="Memory Stars"></span>
+  <span class="navDot aiBirthday" title="AI Birthday"></span>
+  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
+<span style="color:#aaa;font-size:11px;margin-left:8px;">Tap dots to explore stars</span>
 </div>
 
 <style>
@@ -1033,34 +890,6 @@ font-size:11px;
 .navDot.aiBirthday{background:#ff77cc;}
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
-
-
-<!-- 🎂 BIRTHDAY INFO MODAL -->
-<div id="birthdayInfoModal" class="modal">
-  <div class="modal-card">
-    <h2 id="birthdayTitle"></h2>
-    <p id="birthdayDate"></p>
-    <div class="close-btn" onclick="openBirthdayMessage()">💌 Read Birthday Message</div>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
-
-<!-- 🎂 BIRTHDAY MESSAGE MODAL -->
-<div id="birthdayMessageModal" class="modal">
-  <div class="modal-card">
-    <p id="birthdayMessageText" style="white-space:pre-line; line-height:1.6;"></p>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
-
-<script>
-let activeBirthday=null;
-function openBirthdayMessage(){
-  document.getElementById("birthdayInfoModal").style.display="none";
-  document.getElementById("birthdayMessageText").innerText = activeBirthday.message;
-  document.getElementById("birthdayMessageModal").style.display="flex";
-}
-</script>
 
 </body>
 </html>
