@@ -162,6 +162,33 @@ function stopVideo(){
   videoPlayer.src="";
 }
 
+
+/* ================= PROMISE STAR DATA ================= */
+const PROMISES = [
+  {
+    owner: "Sneha",
+    text: `I promise that I will never cheat on you.`
+  },
+  {
+    owner: "Sneha",
+    text: `I promise that I will always love you
+and take care of you, no matter what.`
+  },
+  {
+    owner: "Anand",
+    text: `I promise that I will never leave you,
+no matter how difficult life becomes.`
+  },
+  {
+    owner: "Anand",
+    text: `I promise that if life ever takes us in different directions,
+my heart will still belong to you,
+and I will never choose anyone else in your place.`
+  }
+];
+
+let activePromise = null;
+
 /* ================= CORE STATE ================= */
 let selected=null;
 let lastFocus=null;
@@ -751,64 +778,122 @@ window.addEventListener("click",(e)=>{
 });
 
 /* ---- DOUBLE CLICK (PLANET PHOTO / AUDIO / STAR VIDEO) ---- */
+window.addEventListener("dblclick",(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
 
-/* ---- DOUBLE CLICK (FINAL CLEAN ROUTING) ---- */
-window.addEventListener("dblclick", (e) => {
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(
-    [...planets.map(p => p.mesh), ...memoryStars],
+  const hits=raycaster.intersectObjects(
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
     true
   );
-  if (!hits.length) return;
+  if(!hits.length) return;
 
   let obj = hits[0].object;
 
-  // normalize star mesh → parent
-  if (obj.userData && obj.userData.type === "starHit") obj = obj.parent;
-  if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
-    obj = obj.parent;
-  }
+// ⭐ normalize star object (IMPORTANT)
+if (obj.userData.type === "starHit") obj = obj.parent;
+if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
+  obj = obj.parent;
+}
 
-  // ☀ SUN
-  if (obj.userData && obj.userData.type === "sun") {
+  if(obj.userData.type === "sun"){
     clearTimeout(sunClickTimer);
-    openSunMessage();
+
+    const mt = document.getElementById("meetingText");
+    if (mt) {
+      const firstMeetingDate = new Date("2025-09-27");
+      const today = new Date();
+      const daysTogether = Math.floor(
+        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+      );
+
+      mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+    }
+
+    document.getElementById("sunModal").style.display = "flex";
     return;
   }
+// 🎂 BIRTHDAY STAR DOUBLE CLICK
+if (
+  obj.userData.type === "star" &&
+  (obj.userData.role === "birthday_ai" ||
+   obj.userData.role === "birthday_yoto")
+) {
+  const name =
+    obj.userData.role === "birthday_ai"
+      ? "Sneha"
+      : "Anand";
 
-  // 🎂 BIRTHDAY STARS
-  if (
-    obj.userData &&
+  document.getElementById("birthdayTitle").innerText =
+    "🎂 " + name + "'s Birthday";
+
+  document.getElementById("birthdayDate").innerText =
+    obj.userData.role === "birthday_ai"
+      ? "📅 4 July"
+      : "📅 23 August";
+
+  document.getElementById("birthdayInfoModal").style.display = "flex";
+  return;
+}
+
+
+  // 💛 PROMISE STAR DOUBLE CLICK
+  if(
     obj.userData.type === "star" &&
-    (obj.userData.role === "birthday_ai" ||
-     obj.userData.role === "birthday_yoto")
-  ) {
-    const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
-    document.getElementById("birthdayTitle").innerText = "🎂 " + name + "'s Birthday";
-    document.getElementById("birthdayDate").innerText =
-      obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
-    document.getElementById("birthdayInfoModal").style.display = "flex";
-    return;
-  }
+    obj.userData.role === "promise"
+  ){
+    const promiseStars = memoryStars.filter(
+  s => s.userData.role === "promise"
+);
 
-  // 💛 PROMISE STARS
-  if (obj.userData && obj.userData.type === "star" && obj.userData.role === "promise") {
-    const promiseStars = memoryStars.filter(s => s.userData.role === "promise");
-    const index = promiseStars.indexOf(obj);
-    activePromise = PROMISES[index] || PROMISES[0];
+const index = promiseStars.indexOf(obj);
+activePromise = PROMISES[index] || PROMISES[0];
+
+
     document.getElementById("promiseTitle").innerText =
       "💛 Promise from " + activePromise.owner;
-    document.getElementById("promiseText").innerText = activePromise.text;
+
+    document.getElementById("promiseText").innerText =
+      activePromise.text;
+
     document.getElementById("promiseModal").style.display = "flex";
     return;
   }
 
-  // 🪐 PLANETS
-  if (obj.userData && obj.userData.type === "planet") {
-    openPlanet(obj.userData.index);
+if(obj.userData.type==="planet"){
+    const i=obj.userData.info;
+    document.getElementById("planetTitle").innerText=i.name;
+    document.getElementById("planetImg").src="./assets/photos/"+i.photo;
+    document.getElementById("planetModal").style.display="flex";
+    playAudio("./assets/audio/"+i.audio);
+  }
+
+  
+  if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.getElementById("shayariText").innerText =
+      SHAYARIS[obj.userData.shayariIndex];
+    document.getElementById("shayariModal").style.display="flex";
     return;
   }
+
+  if(obj.userData.type==="star" && obj.userData.video){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    playVideo(obj.userData.video);
+  }
 });
+
 /* ================= ANIMATION LOOP ================= */
 function animate(){
   requestAnimationFrame(animate);
@@ -941,11 +1026,11 @@ font-size:11px;
 </style>
 
 
-<!-- 🎂 BIRTHDAY MODAL -->
-<div id="birthdayInfoModal" class="modal">
+<!-- 💛 PROMISE MODAL -->
+<div id="promiseModal" class="modal">
   <div class="modal-card">
-    <h2 id="birthdayTitle"></h2>
-    <p id="birthdayDate" style="white-space:pre-line; line-height:1.6;"></p>
+    <h2 id="promiseTitle"></h2>
+    <p id="promiseText" style="white-space:pre-line; line-height:1.6;"></p>
     <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
