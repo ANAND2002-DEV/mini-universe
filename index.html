@@ -533,6 +533,23 @@ const BIRTHDAYS = {
   }
 };
 
+
+function getBirthdayCountdown(month, day){
+  const today = new Date();
+  let year = today.getFullYear();
+  let target = new Date(year, month-1, day);
+
+  if (target < today) {
+    target = new Date(year + 1, month-1, day);
+  }
+
+  const diff = Math.ceil((target - today) / (1000*60*60*24));
+
+  if (diff === 0) return "🎉 Today is the birthday!";
+  if (diff === 1) return "🎂 Birthday is tomorrow!";
+  return `⏳ ${diff} days remaining`;
+}
+
 const PROMISES = [
   { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
   { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
@@ -930,7 +947,11 @@ if(obj.userData.type==="planet"){
           document.getElementById("shayariText").innerText =
             b.title + "\n" + b.date + "\n\n" +
             "This day exists only because you were born.\n" +
-            "May this star always remind you how special you are.";
+            "May this star always remind you how special you are.\n\n" +
+            getBirthdayCountdown(
+              b.title.includes("Sneha") ? 7 : 8,
+              b.title.includes("Sneha") ? 4 : 23
+            );
         };
       }
     },0);
