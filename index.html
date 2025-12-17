@@ -946,5 +946,67 @@ font-size:11px;
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
 
+
+<!-- ⭐ PROMISE MODAL -->
+<div id="promiseModal" class="modal">
+  <div class="modal-card" style="
+    border:2px solid rgba(255,215,120,0.95);
+    box-shadow:0 0 70px rgba(255,215,120,0.95);
+    max-height:70vh;
+    overflow:auto;
+  ">
+    <h2 id="promiseTitle" style="color:#ffd27d;"></h2>
+    <p id="promiseText" style="white-space:pre-line; line-height:1.7;"></p>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+
+<script>
+/* ================= PROMISE DATA ================= */
+const PROMISES = [
+  { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
+  { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
+  { title: "Anand’s Promise", text: "I promise that I will never leave you, no matter how difficult life becomes." },
+  { title: "Anand’s Promise", text: "I promise that if life ever takes us in different directions, my heart will still belong to you, and I will never choose anyone else in your place." }
+];
+
+/* ===== APPLY STRONG GOLDEN GLOW TO PROMISE STARS ===== */
+let promiseIndex = 0;
+memoryStars.forEach(star => {
+  if (star.userData.role === "promise") {
+    star.userData.promiseIndex = promiseIndex++;
+    star.material.color.setHex(0xffd36a);
+    star.scale.setScalar(1.45);
+  }
+});
+
+/* ===== PROMISE OPEN ON DOUBLE CLICK ===== */
+window.addEventListener("dblclick", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(memoryStars, true);
+  if (!hits.length) return;
+
+  let obj = hits[0].object;
+  if (obj.userData.type === "starHit") obj = obj.parent;
+
+  if (obj.userData.role === "promise") {
+    const p = PROMISES[obj.userData.promiseIndex];
+    if (!p) return;
+
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    closeAll();
+    document.getElementById("promiseTitle").innerText = p.title;
+    document.getElementById("promiseText").innerText = p.text;
+    document.getElementById("promiseModal").style.display = "flex";
+  }
+});
+</script>
+
 </body>
 </html>
