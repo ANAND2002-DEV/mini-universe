@@ -1036,21 +1036,24 @@ font-size:11px;
 </div>
 
 
-<!-- 🎂 Birthday-only dblclick listener (isolated, non-destructive) -->
+<!-- 🎂 Birthday-only dblclick listener (FINAL FIX: computes mouse coords) -->
 <script>
 (function(){
   window.addEventListener("dblclick", function(e){
-    if (!window.raycaster || !window.camera || !window.memoryStars) return;
+    if (!window.raycaster || !window.camera || !window.memoryStars || !window.renderer) return;
 
-    raycaster.setFromCamera(mouse, camera);
+    const rect = renderer.domElement.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const m = new THREE.Vector2(mx, my);
+
+    raycaster.setFromCamera(m, camera);
     const hits = raycaster.intersectObjects(memoryStars, true);
     if (!hits.length) return;
 
     let obj = hits[0].object;
     if (obj.userData && obj.userData.type === "starHit") obj = obj.parent;
-    if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
-      obj = obj.parent;
-    }
+    if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") obj = obj.parent;
 
     if (!obj.userData || !obj.userData.isBirthday) return;
 
