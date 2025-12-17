@@ -823,13 +823,7 @@ This universe exists to remember every single one of them.`;
     obj.userData.type === "star" &&
     obj.userData.role === "promise"
   ){
-    const promiseStars = memoryStars.filter(
-  s => s.userData.role === "promise"
-);
-
-const index = promiseStars.indexOf(obj);
-activePromise = PROMISES[index] || PROMISES[0];
-
+    activePromise = PROMISES[obj.userData.promiseIndex || 0];
 
     document.getElementById("promiseTitle").innerText =
       "💛 Promise from " + activePromise.owner;
@@ -1007,50 +1001,6 @@ font-size:11px;
     <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
-
-
-<!-- 🎂 BIRTHDAY MODAL -->
-<div id="birthdayInfoModal" class="modal">
-  <div class="modal-card">
-    <h2 id="birthdayTitle"></h2>
-    <p id="birthdayDate" style="white-space:pre-line; line-height:1.6;"></p>
-    <div class="close-btn" onclick="closeAll()">Close</div>
-  </div>
-</div>
-
-
-<!-- 🎂 Birthday dblclick (clean rewrite, non-conflicting) -->
-<script>
-(function(){
-  window.addEventListener("dblclick", function(e){
-    try{
-      if(!window.raycaster || !window.camera || !window.renderer || !window.memoryStars) return;
-
-      const rect = renderer.domElement.getBoundingClientRect();
-      const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      const mouseV = new THREE.Vector2(mx, my);
-
-      raycaster.setFromCamera(mouseV, camera);
-      const hits = raycaster.intersectObjects(memoryStars, true);
-      if(!hits.length) return;
-
-      let obj = hits[0].object;
-      if(obj.userData && obj.userData.type === "starHit") obj = obj.parent;
-      if(obj.parent && obj.parent.userData && obj.parent.userData.type === "star") obj = obj.parent;
-
-      if(!obj.userData || !obj.userData.isBirthday) return;
-
-      const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
-      const date = obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
-
-      document.getElementById("birthdayTitle").innerText = "🎂 " + name + "'s Birthday";
-      document.getElementById("birthdayDate").innerText = date;
-      document.getElementById("birthdayInfoModal").style.display = "flex";
-    }catch(e){}
-  }, false);
-})();
-</script>
 
 </body>
 </html>
