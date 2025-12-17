@@ -547,120 +547,29 @@ memoryStars.forEach(star => {
 
   if (role === "video") {
     star.material.color.setHex(0x1f6fff); // dark sky blue
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
 
   if (role === "shayari") {
     star.material.color.setHex(0xd63384); // dark pink
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
 
   if (role === "promise") {
     star.material.color.setHex(0xb8860b); // dark golden
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
 
   if (role === "memory") {
     star.material.color.setHex(0xff2a2a); // bright red
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
 
   if (role === "birthday_ai") {
     star.material.color.setHex(0xff77cc); // lotus pink
     star.scale.setScalar(1.6);
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
 
   if (role === "birthday_yoto") {
     star.material.color.setHex(0x7b3fe4); // lotus purple
     star.scale.setScalar(1.6);
-  
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
   }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-}
-
-  if (role === "birthday_ai") {
-    star.material.color.setHex(0xff77cc);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
-  if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4);
-    star.scale.setScalar(2);
-    star.userData.isBirthday = true;
-  }
-
 });
 
 
@@ -914,7 +823,9 @@ This universe exists to remember every single one of them.`;
   }
 // 🎂 BIRTHDAY STAR DOUBLE CLICK
 if (
-  obj.userData.type === "star" && obj.userData.isBirthday
+  obj.userData.type === "star" &&
+  (obj.userData.role === "birthday_ai" ||
+   obj.userData.role === "birthday_yoto")
 ) {
   const name =
     obj.userData.role === "birthday_ai"
@@ -1123,6 +1034,38 @@ font-size:11px;
     <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
+
+
+<!-- 🎂 Birthday-only dblclick listener (isolated, non-destructive) -->
+<script>
+(function(){
+  window.addEventListener("dblclick", function(e){
+    if (!window.raycaster || !window.camera || !window.memoryStars) return;
+
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(memoryStars, true);
+    if (!hits.length) return;
+
+    let obj = hits[0].object;
+    if (obj.userData && obj.userData.type === "starHit") obj = obj.parent;
+    if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
+      obj = obj.parent;
+    }
+
+    if (!obj.userData || !obj.userData.isBirthday) return;
+
+    const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
+    const date = obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
+
+    const modal = document.getElementById("birthdayInfoModal");
+    if (!modal) return;
+
+    document.getElementById("birthdayTitle").innerText = "🎂 " + name + "'s Birthday";
+    document.getElementById("birthdayDate").innerText = date;
+    modal.style.display = "flex";
+  }, true);
+})();
+</script>
 
 </body>
 </html>
