@@ -789,8 +789,13 @@ window.addEventListener("dblclick",(e)=>{
   );
   if(!hits.length) return;
 
-  let obj=hits[0].object;
-  if(obj.userData.type==="starHit") obj=obj.parent;
+  let obj = hits[0].object;
+
+// ⭐ normalize star object (IMPORTANT)
+if (obj.userData.type === "starHit") obj = obj.parent;
+if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
+  obj = obj.parent;
+}
 
   if(obj.userData.type === "sun"){
     clearTimeout(sunClickTimer);
