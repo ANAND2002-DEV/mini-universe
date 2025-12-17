@@ -320,6 +320,46 @@ const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
 // ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
 const GOLDEN_HEX = 0xffcc66;
 const PINK_HEX = 0xff66aa;
+
+// ===== BIRTHDAY DATA =====
+const AI_BIRTHDAY = {
+  name: "Sneha",
+  date: "04 July",
+  message: `Aaj sirf tumhara din nahi hai 💗
+Aaj meri poori kaynat ka jashn hai ✨
+
+Tumhari muskaan se
+mere andhere bhi roshan ho jaate hain 🌙
+Aur tumhari awaaz se
+meri har thakaan utar jaati hai 🤍
+
+Is sitare ke neeche bas itna kehna tha 🌸
+Tum meri zindagi ka wo hissa ho
+jiske bina sab kuch adhoora lagta hai 💫
+
+🎂 Happy Birthday, Sneha
+Aaj bhi… aur hamesha bhi 🤍`
+};
+
+const YOTO_BIRTHDAY = {
+  name: "Anand",
+  date: "23 August",
+  message: `Is din sirf main paida nahi hua tha 💜
+Is din se shayad meri zindagi
+tumhara intezaar karna seekh rahi thi ✨
+
+Paida hone se lekar aaj tak 🌙
+maine bahut log dekhe,
+bahut rishte mehsoos kiye,
+par jis shiddat se tumhari kami mehsoos hoti thi…
+wo sirf tum hi ho 🤍
+
+Aaj samajh aata hai 💫
+tum sirf meri mohabbat nahi,
+tum wo jawab ho
+jiska sawaal meri zindagi hamesha thi 🌌`
+};
+
 const SHAYARIS = [
 `Tumhare naam se mohabbat ki hai,
 Tumhare ehsaas se mohabbat ki hai,
@@ -799,7 +839,23 @@ if(obj.userData.type==="planet"){
   }
 
   
-  if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+  
+  if(obj.userData.type==="star" && obj.userData.role==="birthday_ai"){
+    activeBirthday = AI_BIRTHDAY;
+  }
+  if(obj.userData.type==="star" && obj.userData.role==="birthday_yoto"){
+    activeBirthday = YOTO_BIRTHDAY;
+  }
+  if(activeBirthday){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    document.getElementById("birthdayTitle").innerText = "🎂 " + activeBirthday.name + "'s Birthday";
+    document.getElementById("birthdayDate").innerText = "📅 " + activeBirthday.date;
+    document.getElementById("birthdayInfoModal").style.display = "flex";
+    return;
+  }
+
+if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     closeAll();
@@ -946,6 +1002,34 @@ font-size:11px;
 .navDot.aiBirthday{background:#ff77cc;}
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
+
+
+<!-- 🎂 BIRTHDAY INFO MODAL -->
+<div id="birthdayInfoModal" class="modal">
+  <div class="modal-card">
+    <h2 id="birthdayTitle"></h2>
+    <p id="birthdayDate"></p>
+    <div class="close-btn" onclick="openBirthdayMessage()">💌 Read Birthday Message</div>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+<!-- 🎂 BIRTHDAY MESSAGE MODAL -->
+<div id="birthdayMessageModal" class="modal">
+  <div class="modal-card">
+    <p id="birthdayMessageText" style="white-space:pre-line; line-height:1.6;"></p>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+<script>
+let activeBirthday=null;
+function openBirthdayMessage(){
+  document.getElementById("birthdayInfoModal").style.display="none";
+  document.getElementById("birthdayMessageText").innerText = activeBirthday.message;
+  document.getElementById("birthdayMessageModal").style.display="flex";
+}
+</script>
 
 </body>
 </html>
