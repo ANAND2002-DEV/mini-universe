@@ -789,13 +789,8 @@ window.addEventListener("dblclick",(e)=>{
   );
   if(!hits.length) return;
 
-  let obj = hits[0].object;
-
-// ⭐ normalize star object (IMPORTANT)
-if (obj.userData.type === "starHit") obj = obj.parent;
-if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
-  obj = obj.parent;
-}
+  let obj=hits[0].object;
+  if(obj.userData.type==="starHit") obj=obj.parent;
 
   if(obj.userData.type === "sun"){
     clearTimeout(sunClickTimer);
@@ -821,28 +816,6 @@ This universe exists to remember every single one of them.`;
     document.getElementById("sunModal").style.display = "flex";
     return;
   }
-// 🎂 BIRTHDAY STAR DOUBLE CLICK
-if (
-  obj.userData.type === "star" &&
-  (obj.userData.role === "birthday_ai" ||
-   obj.userData.role === "birthday_yoto")
-) {
-  const name =
-    obj.userData.role === "birthday_ai"
-      ? "Sneha"
-      : "Anand";
-
-  document.getElementById("birthdayTitle").innerText =
-    "🎂 " + name + "'s Birthday";
-
-  document.getElementById("birthdayDate").innerText =
-    obj.userData.role === "birthday_ai"
-      ? "📅 4 July"
-      : "📅 23 August";
-
-  document.getElementById("birthdayInfoModal").style.display = "flex";
-  return;
-}
 
 
   // 💛 PROMISE STAR DOUBLE CLICK
@@ -1036,37 +1009,46 @@ font-size:11px;
 </div>
 
 
-<!-- 🎂 Birthday-only dblclick listener (FINAL FIX: computes mouse coords) -->
+<!-- 🎂 BIRTHDAY MODAL -->
+<div id="birthdayInfoModal" class="modal">
+  <div class="modal-card">
+    <h2 id="birthdayTitle"></h2>
+    <p id="birthdayDate" style="white-space:pre-line; line-height:1.6;"></p>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+
+<!-- 🎂 Birthday dblclick (clean rewrite, non-conflicting) -->
 <script>
 (function(){
   window.addEventListener("dblclick", function(e){
-    if (!window.raycaster || !window.camera || !window.memoryStars || !window.renderer) return;
+    try{
+      if(!window.raycaster || !window.camera || !window.renderer || !window.memoryStars) return;
 
-    const rect = renderer.domElement.getBoundingClientRect();
-    const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const m = new THREE.Vector2(mx, my);
+      const rect = renderer.domElement.getBoundingClientRect();
+      const mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      const mouseV = new THREE.Vector2(mx, my);
 
-    raycaster.setFromCamera(m, camera);
-    const hits = raycaster.intersectObjects(memoryStars, true);
-    if (!hits.length) return;
+      raycaster.setFromCamera(mouseV, camera);
+      const hits = raycaster.intersectObjects(memoryStars, true);
+      if(!hits.length) return;
 
-    let obj = hits[0].object;
-    if (obj.userData && obj.userData.type === "starHit") obj = obj.parent;
-    if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") obj = obj.parent;
+      let obj = hits[0].object;
+      if(obj.userData && obj.userData.type === "starHit") obj = obj.parent;
+      if(obj.parent && obj.parent.userData && obj.parent.userData.type === "star") obj = obj.parent;
 
-    if (!obj.userData || !obj.userData.isBirthday) return;
+      if(!obj.userData || !obj.userData.isBirthday) return;
 
-    const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
-    const date = obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
+      const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
+      const date = obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
 
-    const modal = document.getElementById("birthdayInfoModal");
-    if (!modal) return;
-
-    document.getElementById("birthdayTitle").innerText = "🎂 " + name + "'s Birthday";
-    document.getElementById("birthdayDate").innerText = date;
-    modal.style.display = "flex";
-  }, true);
+      document.getElementById("birthdayTitle").innerText = "🎂 " + name + "'s Birthday";
+      document.getElementById("birthdayDate").innerText = date;
+      document.getElementById("birthdayInfoModal").style.display = "flex";
+    }catch(e){}
+  }, false);
 })();
 </script>
 
