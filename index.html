@@ -823,7 +823,13 @@ This universe exists to remember every single one of them.`;
     obj.userData.type === "star" &&
     obj.userData.role === "promise"
   ){
-    activePromise = PROMISES[obj.userData.promiseIndex || 0];
+    const promiseStars = memoryStars.filter(
+  s => s.userData.role === "promise"
+);
+
+const index = promiseStars.indexOf(obj);
+activePromise = PROMISES[index] || PROMISES[0];
+
 
     document.getElementById("promiseTitle").innerText =
       "💛 Promise from " + activePromise.owner;
