@@ -93,48 +93,6 @@ html,body{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
-
-// ================= BIRTHDAY STAR DATA (LOCKED CONTENT ONLY) =================
-const AI_BIRTHDAY = {
-  name: "Sneha",
-  date: "07-04", // 4 July
-  message: `Aaj sirf tumhara din nahi hai 💗
-Aaj meri poori kaynat ka jashn hai ✨
-
-Tumhari muskaan se
-mere andhere bhi roshan ho jaate hain 🌙
-Aur tumhari awaaz se
-meri har thakaan utar jaati hai 🤍
-
-Is sitare ke neeche bas itna kehna tha 🌸
-Tum meri zindagi ka wo hissa ho
-jiske bina sab kuch adhoora lagta hai 💫
-
-🎂 Happy Birthday, Sneha
-Aaj bhi… aur hamesha bhi 🤍
-`
-};
-
-const YOTO_BIRTHDAY = {
-  name: "Anand",
-  date: "08-23", // 23 August
-  message: `Is din sirf main paida nahi hua tha 💜
-Is din se shayad meri zindagi
-tumhara intezaar karna seekh rahi thi ✨
-
-Paida hone se lekar aaj tak 🌙
-maine bahut log dekhe,
-bahut rishte mehsoos kiye,
-par jis shiddat se tumhari kami mehsoos hoti thi…
-wo sirf tum hi ho 🤍
-
-Aaj samajh aata hai 💫
-tum sirf meri mohabbat nahi,
-tum wo jawab ho
-jiska sawaal meri zindagi hamesha thi 🌌
-`
-};
-
 </script>
 </head>
 
@@ -169,6 +127,46 @@ jiska sawaal meri zindagi hamesha thi 🌌
 </div>
 
 <script type="module">
+
+// ================= BIRTHDAY STAR DATA (CONTENT ONLY) =================
+const AI_BIRTHDAY = {
+  name: "Sneha",
+  date: "07-04", // 4 July
+  message: `Aaj sirf tumhara din nahi hai 💗
+Aaj meri poori kaynat ka jashn hai ✨
+
+Tumhari muskaan se
+mere andhere bhi roshan ho jaate hain 🌙
+Aur tumhari awaaz se
+meri har thakaan utar jaati hai 🤍
+
+Is sitare ke neeche bas itna kehna tha 🌸
+Tum meri zindagi ka wo hissa ho
+jiske bina sab kuch adhoora lagta hai 💫
+
+🎂 Happy Birthday, Sneha
+Aaj bhi… aur hamesha bhi 🤍`
+};
+
+const YOTO_BIRTHDAY = {
+  name: "Anand",
+  date: "08-23", // 23 August
+  message: `Is din sirf main paida nahi hua tha 💜
+Is din se shayad meri zindagi
+tumhara intezaar karna seekh rahi thi ✨
+
+Paida hone se lekar aaj tak 🌙
+maine bahut log dekhe,
+bahut rishte mehsoos kiye,
+par jis shiddat se tumhari kami mehsoos hoti thi…
+wo sirf tum hi ho 🤍
+
+Aaj samajh aata hai 💫
+tum sirf meri mohabbat nahi,
+tum wo jawab ho
+jiska sawaal meri zindagi hamesha thi 🌌`
+};
+
 import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
@@ -474,52 +472,6 @@ function focusStarByRole(role){
   );
 }
 
-// ================= STAR NUMBER NAV (1–25) =================
-window.addEventListener("DOMContentLoaded",()=>{
-  const nav = document.getElementById("starNav");
-  if(!nav) return;
-
-  memoryStars.forEach((star, index)=>{
-    const btn = document.createElement("div");
-    btn.innerText = index + 1;
-    btn.style.width = "22px";
-    btn.style.height = "22px";
-    btn.style.borderRadius = "50%";
-    btn.style.display = "flex";
-    btn.style.alignItems = "center";
-    btn.style.justifyContent = "center";
-    btn.style.cursor = "pointer";
-    btn.style.fontSize = "11px";
-    btn.style.color = "#fff";
-    btn.style.background = "#" + star.material.color.getHexString();
-    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
-
-    btn.addEventListener("click",()=>{
-      selected = star;
-      lastFocus = star;
-      lastFocusZoom = zoomTarget;
-
-      controls.target.copy(star.position);
-
-      const size = 20;
-      zoomTarget = Math.max(size * 1.6, 50);
-
-      const dir = camera.position.clone()
-        .sub(controls.target)
-        .normalize();
-
-      camera.position.copy(
-        star.position.clone().add(
-          dir.multiplyScalar(zoomTarget * 1.4)
-        )
-      );
-    });
-
-    nav.appendChild(btn);
-  });
-});
-
-
 // Attach clicks
 window.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll("#starNav .navDot").forEach(dot=>{
@@ -712,7 +664,6 @@ renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
 window.addEventListener("click",(e)=>{
-  if(e.detail > 1) return; // allow dblclick to handle Sun message
   if(isDragging) return;
 
   stopAudio();
@@ -796,7 +747,7 @@ window.addEventListener("dblclick",(e)=>{
   raycaster.setFromCamera(mouse,camera);
 
   const hits=raycaster.intersectObjects(
-    [sun,...planets.map(p=>p.mesh),...memoryStars],
+    [...planets.map(p=>p.mesh),...memoryStars],
     true
   );
   if(!hits.length) return;
@@ -925,24 +876,28 @@ window.addEventListener("resize",()=>{
 
 
 
-<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
+<!-- ⭐ QUICK STAR NAVIGATOR -->
 <div id="starNav" style="
 position:fixed;
 bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:8px;
-max-width:92%;
+gap:10px;
 z-index:3000;
 background:rgba(0,0,0,0.55);
 backdrop-filter:blur(6px);
 padding:10px 14px;
 border-radius:16px;
-font-size:11px;
+font-size:12px;
 ">
+  <span class="navDot video" title="Video Stars"></span>
+  <span class="navDot shayari" title="Shayari Stars"></span>
+  <span class="navDot promise" title="Promise Stars"></span>
+  <span class="navDot memory" title="Memory Stars"></span>
+  <span class="navDot aiBirthday" title="AI Birthday"></span>
+  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
+<span style="color:#aaa;font-size:11px;margin-left:8px;">Tap dots to explore stars</span>
 </div>
 
 <style>
