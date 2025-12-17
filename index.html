@@ -917,8 +917,23 @@ if(obj.userData.type==="planet"){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     closeAll();
-    document.getElementById("shayariText").innerText =
-      b.title + "\n" + b.date + "\n\n" + b.message;
+    document.getElementById("shayariText").innerHTML =
+      "<strong>" + b.title + "</strong>\n" +
+      b.date + "\n\n" +
+      b.message +
+      "\n\n<button id='birthdayMsgBtn' style=\"margin-top:12px;padding:8px 14px;border:none;border-radius:10px;background:#ff77cc;color:#000;cursor:pointer;font-weight:bold;\">View Birthday Message</button>";
+
+    setTimeout(()=>{
+      const btn = document.getElementById("birthdayMsgBtn");
+      if(btn){
+        btn.onclick = ()=>{
+          document.getElementById("shayariText").innerText =
+            b.title + "\n" + b.date + "\n\n" +
+            "This day exists only because you were born.\n" +
+            "May this star always remind you how special you are.";
+        };
+      }
+    },0);
     document.getElementById("shayariModal").style.display = "flex";
     return;
   }
