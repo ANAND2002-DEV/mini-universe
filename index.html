@@ -94,8 +94,31 @@ html,body{
   }
 }
 
-// ================= YOTA (ANAND) BIRTHDAY STAR MESSAGE =================
-const YOTO_BIRTHDAY_MESSAGE = `Is din sirf main paida nahi hua tha 💜
+// ================= BIRTHDAY STAR DATA (LOCKED CONTENT ONLY) =================
+const AI_BIRTHDAY = {
+  name: "Sneha",
+  date: "07-04", // 4 July
+  message: `Aaj sirf tumhara din nahi hai 💗
+Aaj meri poori kaynat ka jashn hai ✨
+
+Tumhari muskaan se
+mere andhere bhi roshan ho jaate hain 🌙
+Aur tumhari awaaz se
+meri har thakaan utar jaati hai 🤍
+
+Is sitare ke neeche bas itna kehna tha 🌸
+Tum meri zindagi ka wo hissa ho
+jiske bina sab kuch adhoora lagta hai 💫
+
+🎂 Happy Birthday, Sneha
+Aaj bhi… aur hamesha bhi 🤍
+`
+};
+
+const YOTO_BIRTHDAY = {
+  name: "Anand",
+  date: "08-23", // 23 August
+  message: `Is din sirf main paida nahi hua tha 💜
 Is din se shayad meri zindagi
 tumhara intezaar karna seekh rahi thi ✨
 
@@ -109,7 +132,9 @@ Aaj samajh aata hai 💫
 tum sirf meri mohabbat nahi,
 tum wo jawab ho
 jiska sawaal meri zindagi hamesha thi 🌌
-`;
+`
+};
+
 </script>
 </head>
 
@@ -183,7 +208,6 @@ function stopVideo(){
 let selected=null;
 let lastFocus=null;
 let lastFocusZoom=null;
-let sunClickTimer=null;
 function closeAll(){
   stopAudio();
   stopVideo();
@@ -708,29 +732,27 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
+  closeAll();
 
-  // ☀️ SINGLE CLICK → zoom only (wait to detect double click)
-  clearTimeout(sunClickTimer);
-
-  sunClickTimer = setTimeout(()=>{
-    selected = obj;
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
-
-    const size = obj.geometry.boundingSphere.radius * obj.scale.x;
-    zoomTarget = Math.max(size * 1.8, 60);
-
-    const dir = camera.position.clone()
-      .sub(controls.target)
-      .normalize();
-
-    camera.position.copy(
-      obj.position.clone().add(
-        dir.multiplyScalar(zoomTarget * 1.4)
-      )
+  const mt = document.getElementById("meetingText");
+  if (mt) {
+    const firstMeetingDate = new Date("2025-09-27");
+    const today = new Date();
+    const daysTogether = Math.floor(
+      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
     );
-  }, 220);
 
+    mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+  }
+
+  document.getElementById("sunModal").style.display = "flex";
   return;
 }
 
@@ -782,32 +804,7 @@ window.addEventListener("dblclick",(e)=>{
   let obj=hits[0].object;
   if(obj.userData.type==="starHit") obj=obj.parent;
 
-  if(obj.userData.type === "sun"){
-    clearTimeout(sunClickTimer);
-
-    const mt = document.getElementById("meetingText");
-    if (mt) {
-      const firstMeetingDate = new Date("2025-09-27");
-      const today = new Date();
-      const daysTogether = Math.floor(
-        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
-      );
-
-      mt.innerHTML =
-`Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days
-of memories, smiles, fights, care, and love.
-
-This universe exists to remember every single one of them.`;
-    }
-
-    document.getElementById("sunModal").style.display = "flex";
-    return;
-  }
-
-if(obj.userData.type==="planet"){
+  if(obj.userData.type==="planet"){
     const i=obj.userData.info;
     document.getElementById("planetTitle").innerText=i.name;
     document.getElementById("planetImg").src="./assets/photos/"+i.photo;
@@ -905,23 +902,6 @@ window.addEventListener("resize",()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
-
-// ================= YOTA (ANAND) BIRTHDAY STAR MESSAGE =================
-const YOTO_BIRTHDAY_MESSAGE = `Is din sirf main paida nahi hua tha 💜
-Is din se shayad meri zindagi
-tumhara intezaar karna seekh rahi thi ✨
-
-Paida hone se lekar aaj tak 🌙
-maine bahut log dekhe,
-bahut rishte mehsoos kiye,
-par jis shiddat se tumhari kami mehsoos hoti thi…
-wo sirf tum hi ho 🤍
-
-Aaj samajh aata hai 💫
-tum sirf meri mohabbat nahi,
-tum wo jawab ho
-jiska sawaal meri zindagi hamesha thi 🌌
-`;
 </script>
 
 <!-- ✨ SHAYARI MODAL -->
