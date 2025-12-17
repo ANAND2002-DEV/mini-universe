@@ -128,7 +128,7 @@ html,body{
 
 <script type="module">
 
-// ================= BIRTHDAY STAR DATA (CONTENT ONLY) =================
+// ================= BIRTHDAY STAR DATA (CONTENT ONLY - LOCKED) =================
 const AI_BIRTHDAY = {
   name: "Sneha",
   date: "07-04", // 4 July
@@ -204,22 +204,11 @@ function stopVideo(){
 
 /* ================= CORE STATE ================= */
 let selected=null;
-let lastFocus=null;
-let lastFocusZoom=null;
 function closeAll(){
   stopAudio();
   stopVideo();
-
-  // 🔁 Restore last focused object (planet/star) instead of jumping to Sun
-  if(lastFocus){
-    selected = lastFocus;
-    controls.target.copy(lastFocus.position);
-    if(lastFocusZoom) zoomTarget = lastFocusZoom;
-  }else{
-    selected = null;
-    controls.target.set(0,0,0);
-  }
-
+  selected=null;
+  controls.target.set(0,0,0);
   document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 window.closeAll=closeAll;
@@ -709,10 +698,6 @@ This universe exists to remember every single one of them.`;
 
     selected = obj;
 
-    // 📌 remember last focused object
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
-
     // 🚀 FORCE FULL ZOOM + TRACK ON SINGLE CLICK (planet / sun / star)
     const size = obj.geometry
       ? obj.geometry.boundingSphere.radius * obj.scale.x
@@ -765,8 +750,6 @@ window.addEventListener("dblclick",(e)=>{
 
   
   if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
     closeAll();
     document.getElementById("shayariText").innerText =
       SHAYARIS[obj.userData.shayariIndex];
@@ -775,8 +758,6 @@ window.addEventListener("dblclick",(e)=>{
   }
 
   if(obj.userData.type==="star" && obj.userData.video){
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
     playVideo(obj.userData.video);
   }
 });
@@ -915,6 +896,26 @@ font-size:12px;
 .navDot.aiBirthday{background:#ff77cc;}
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
+
+
+<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
+<div id="starNav" style="
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:8px;
+max-width:92%;
+z-index:3000;
+background:rgba(0,0,0,0.55);
+backdrop-filter:blur(6px);
+padding:10px 14px;
+border-radius:16px;
+font-size:11px;
+"></div>
 
 </body>
 </html>
