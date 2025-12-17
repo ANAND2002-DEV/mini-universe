@@ -162,13 +162,52 @@ function stopVideo(){
   videoPlayer.src="";
 }
 
+
+/* ================= PROMISE STAR DATA ================= */
+const PROMISES = [
+  {
+    owner: "Sneha",
+    text: `I promise that I will never cheat on you.`
+  },
+  {
+    owner: "Sneha",
+    text: `I promise that I will always love you
+and take care of you, no matter what.`
+  },
+  {
+    owner: "Anand",
+    text: `I promise that I will never leave you,
+no matter how difficult life becomes.`
+  },
+  {
+    owner: "Anand",
+    text: `I promise that if life ever takes us in different directions,
+my heart will still belong to you,
+and I will never choose anyone else in your place.`
+  }
+];
+
+let activePromise = null;
+
 /* ================= CORE STATE ================= */
 let selected=null;
+let lastFocus=null;
+let lastFocusZoom=null;
+let sunClickTimer=null;
 function closeAll(){
   stopAudio();
   stopVideo();
-  selected=null;
-  controls.target.set(0,0,0);
+
+  // 🔁 Restore last focused object (planet/star) instead of jumping to Sun
+  if(lastFocus){
+    selected = lastFocus;
+    controls.target.copy(lastFocus.position);
+    if(lastFocusZoom) zoomTarget = lastFocusZoom;
+  }else{
+    selected = null;
+    controls.target.set(0,0,0);
+  }
+
   document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
 }
 window.closeAll=closeAll;
@@ -190,13 +229,13 @@ const controls=new OrbitControls(camera,renderer.domElement);
 controls.enablePan=false;
 controls.enableZoom=false;
 controls.enableDamping=true;
-controls.dampingFactor=0.15;
+controls.dampingFactor=0.08; // smoother camera damping
 /* ================= ZOOM ================= */
 let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
-const ZOOM_SMOOTH = 0.08;
+const ZOOM_SMOOTH = 0.045; // smoother zoom
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
@@ -408,8 +447,64 @@ function focusStarByRole(role){
   controls.target.copy(star.position);
 
   const size = 20;
-  zoomTarget = Math.max(size * 3.5, 120);
+  zoomTarget = Math.max(size * 1.6, 50);
+
+  const dir = camera.position.clone()
+    .sub(controls.target)
+    .normalize();
+
+  camera.position.copy(
+    star.position.clone().add(
+      dir.multiplyScalar(zoomTarget * 1.4)
+    )
+  );
 }
+
+// ================= STAR NUMBER NAV (1–25) =================
+window.addEventListener("DOMContentLoaded",()=>{
+  const nav = document.getElementById("starNav");
+  if(!nav) return;
+
+  memoryStars.forEach((star, index)=>{
+    const btn = document.createElement("div");
+    btn.innerText = index + 1;
+    btn.style.width = "22px";
+    btn.style.height = "22px";
+    btn.style.borderRadius = "50%";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.style.cursor = "pointer";
+    btn.style.fontSize = "11px";
+    btn.style.color = "#fff";
+    btn.style.background = "#" + star.material.color.getHexString();
+    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
+
+    btn.addEventListener("click",()=>{
+      selected = star;
+      lastFocus = star;
+      lastFocusZoom = zoomTarget;
+
+      controls.target.copy(star.position);
+
+      const size = 20;
+      zoomTarget = Math.max(size * 1.6, 50);
+
+      const dir = camera.position.clone()
+        .sub(controls.target)
+        .normalize();
+
+      camera.position.copy(
+        star.position.clone().add(
+          dir.multiplyScalar(zoomTarget * 1.4)
+        )
+      );
+    });
+
+    nav.appendChild(btn);
+  });
+});
+
 
 // Attach clicks
 window.addEventListener("DOMContentLoaded",()=>{
@@ -603,6 +698,7 @@ renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
 
 /* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
 window.addEventListener("click",(e)=>{
+  if(e.detail > 1) return; // allow dblclick to handle Sun message
   if(isDragging) return;
 
   stopAudio();
@@ -622,33 +718,57 @@ window.addEventListener("click",(e)=>{
     if(obj.userData.type==="starHit") obj=obj.parent;
 
   if (obj.userData.type === "sun") {
-  closeAll();
 
-  const mt = document.getElementById("meetingText");
-  if (mt) {
-    const firstMeetingDate = new Date("2025-09-27");
-    const today = new Date();
-    const daysTogether = Math.floor(
-      (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+  // ☀️ SINGLE CLICK → zoom only (wait to detect double click)
+  clearTimeout(sunClickTimer);
+
+  sunClickTimer = setTimeout(()=>{
+    selected = obj;
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    const size = obj.geometry.boundingSphere.radius * obj.scale.x;
+    zoomTarget = Math.max(size * 1.8, 60);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
     );
+  }, 220);
 
-    mt.innerHTML =
-`Our First Meeting 💛
-27 September 2025
-
-From that day, it has been ${daysTogether} days
-of memories, smiles, fights, care, and love.
-
-This universe exists to remember every single one of them.`;
-  }
-
-  document.getElementById("sunModal").style.display = "flex";
   return;
 }
 
-    selected=obj;
-    ZOOM_MIN = 60;
-    ZOOM_MAX = 3000;
+    selected = obj;
+
+    // 📌 remember last focused object
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    // 🚀 FORCE FULL ZOOM + TRACK ON SINGLE CLICK (planet / sun / star)
+    const size = obj.geometry
+      ? obj.geometry.boundingSphere.radius * obj.scale.x
+      : 40;
+
+    zoomTarget = Math.max(size * 1.6, 50);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
+    );
+
+    ZOOM_MIN = 40;
+    ZOOM_MAX = 2500;
   }else{
     closeAll();
     zoomTarget = camera.position.distanceTo(controls.target);
@@ -657,61 +777,122 @@ This universe exists to remember every single one of them.`;
   }
 });
 
+/* ---- DOUBLE CLICK (PLANET PHOTO / AUDIO / STAR VIDEO) ---- */
+window.addEventListener("dblclick",(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
 
-/* ---- DOUBLE CLICK (CLEAN REBUILD: SUN / BIRTHDAY / PROMISE / OTHERS) ---- */
-window.addEventListener("dblclick", (e) => {
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(
-    [...planets.map(p => p.mesh), ...memoryStars],
+  const hits=raycaster.intersectObjects(
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
     true
   );
-  if (!hits.length) return;
+  if(!hits.length) return;
 
   let obj = hits[0].object;
 
-  // Normalize star hit (child -> parent)
-  if (obj.userData?.type === "starHit") obj = obj.parent;
-  if (obj.parent && obj.parent.userData?.type === "star") obj = obj.parent;
+// ⭐ normalize star object (IMPORTANT)
+if (obj.userData.type === "starHit") obj = obj.parent;
+if (obj.parent && obj.parent.userData && obj.parent.userData.type === "star") {
+  obj = obj.parent;
+}
 
-  // ☀ SUN
-  if (obj.userData?.type === "sun") {
+  if(obj.userData.type === "sun"){
     clearTimeout(sunClickTimer);
-    openSunMessage();
+
+    const mt = document.getElementById("meetingText");
+    if (mt) {
+      const firstMeetingDate = new Date("2025-09-27");
+      const today = new Date();
+      const daysTogether = Math.floor(
+        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+      );
+
+      mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+    }
+
+    document.getElementById("sunModal").style.display = "flex";
     return;
   }
+// 🎂 BIRTHDAY STAR DOUBLE CLICK
+if (
+  obj.userData.type === "star" &&
+  (obj.userData.role === "birthday_ai" ||
+   obj.userData.role === "birthday_yoto")
+) {
+  const name =
+    obj.userData.role === "birthday_ai"
+      ? "Sneha"
+      : "Anand";
 
-  // 🎂 BIRTHDAY STARS
-  if (
-    obj.userData?.type === "star" &&
-    (obj.userData.role === "birthday_ai" || obj.userData.role === "birthday_yoto")
-  ) {
-    const name = obj.userData.role === "birthday_ai" ? "Sneha" : "Anand";
-    document.getElementById("birthdayTitle").innerText = `🎂 ${name}'s Birthday`;
-    document.getElementById("birthdayDate").innerText =
-      obj.userData.role === "birthday_ai" ? "📅 4 July" : "📅 23 August";
-    document.getElementById("birthdayInfoModal").style.display = "flex";
-    return;
-  }
+  document.getElementById("birthdayTitle").innerText =
+    "🎂 " + name + "'s Birthday";
 
-  // 💛 PROMISE STARS
-  if (obj.userData?.type === "star" && obj.userData.role === "promise") {
-    const promiseStars = memoryStars.filter(s => s.userData.role === "promise");
-    const index = promiseStars.indexOf(obj);
-    activePromise = PROMISES[index] || PROMISES[0];
+  document.getElementById("birthdayDate").innerText =
+    obj.userData.role === "birthday_ai"
+      ? "📅 4 July"
+      : "📅 23 August";
+
+  document.getElementById("birthdayInfoModal").style.display = "flex";
+  return;
+}
+
+
+  // 💛 PROMISE STAR DOUBLE CLICK
+  if(
+    obj.userData.type === "star" &&
+    obj.userData.role === "promise"
+  ){
+    const promiseStars = memoryStars.filter(
+  s => s.userData.role === "promise"
+);
+
+const index = promiseStars.indexOf(obj);
+activePromise = PROMISES[index] || PROMISES[0];
+
+
     document.getElementById("promiseTitle").innerText =
       "💛 Promise from " + activePromise.owner;
-    document.getElementById("promiseText").innerText = activePromise.text;
+
+    document.getElementById("promiseText").innerText =
+      activePromise.text;
+
     document.getElementById("promiseModal").style.display = "flex";
     return;
   }
 
-  // 🪐 PLANETS (fallback)
-  if (obj.userData?.type === "planet") {
-    openPlanet(obj.userData.index);
+if(obj.userData.type==="planet"){
+    const i=obj.userData.info;
+    document.getElementById("planetTitle").innerText=i.name;
+    document.getElementById("planetImg").src="./assets/photos/"+i.photo;
+    document.getElementById("planetModal").style.display="flex";
+    playAudio("./assets/audio/"+i.audio);
+  }
+
+  
+  if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.getElementById("shayariText").innerText =
+      SHAYARIS[obj.userData.shayariIndex];
+    document.getElementById("shayariModal").style.display="flex";
     return;
   }
-});
 
+  if(obj.userData.type==="star" && obj.userData.video){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    playVideo(obj.userData.video);
+  }
+});
 
 /* ================= ANIMATION LOOP ================= */
 function animate(){
@@ -808,28 +989,24 @@ window.addEventListener("resize",()=>{
 
 
 
-<!-- ⭐ QUICK STAR NAVIGATOR -->
+<!-- ⭐ STAR INDEX NAVIGATOR (1–25) -->
 <div id="starNav" style="
 position:fixed;
 bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-gap:10px;
+flex-wrap:wrap;
+justify-content:center;
+gap:8px;
+max-width:92%;
 z-index:3000;
 background:rgba(0,0,0,0.55);
 backdrop-filter:blur(6px);
 padding:10px 14px;
 border-radius:16px;
-font-size:12px;
+font-size:11px;
 ">
-  <span class="navDot video" title="Video Stars"></span>
-  <span class="navDot shayari" title="Shayari Stars"></span>
-  <span class="navDot promise" title="Promise Stars"></span>
-  <span class="navDot memory" title="Memory Stars"></span>
-  <span class="navDot aiBirthday" title="AI Birthday"></span>
-  <span class="navDot yotoBirthday" title="YOTO Birthday"></span>
-<span style="color:#aaa;font-size:11px;margin-left:8px;">Tap dots to explore stars</span>
 </div>
 
 <style>
@@ -847,6 +1024,16 @@ font-size:12px;
 .navDot.aiBirthday{background:#ff77cc;}
 .navDot.yotoBirthday{background:#7b3fe4;}
 </style>
+
+
+<!-- 💛 PROMISE MODAL -->
+<div id="promiseModal" class="modal">
+  <div class="modal-card">
+    <h2 id="promiseTitle"></h2>
+    <p id="promiseText" style="white-space:pre-line; line-height:1.6;"></p>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
 
 </body>
 </html>
