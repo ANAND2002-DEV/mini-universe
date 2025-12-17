@@ -808,6 +808,22 @@ if(obj.userData.type==="planet"){
     return;
   }
 
+
+  /* ===== PROMISE STAR OPEN (MERGED) ===== */
+  if(obj.userData.type==="star" && obj.userData.role==="promise"){
+    const p = PROMISES[obj.userData.promiseIndex];
+    if(!p) return;
+
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    closeAll();
+    document.getElementById("promiseTitle").innerText = p.title;
+    document.getElementById("promiseText").innerText = p.text;
+    document.getElementById("promiseModal").style.display = "flex";
+    return;
+  }
+
   if(obj.userData.type==="star" && obj.userData.video){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
@@ -981,31 +997,6 @@ memoryStars.forEach(star => {
   }
 });
 
-/* ===== PROMISE OPEN ON DOUBLE CLICK ===== */
-window.addEventListener("dblclick", (e) => {
-  mouse.x = (e.clientX / innerWidth) * 2 - 1;
-  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-
-  const hits = raycaster.intersectObjects(memoryStars, true);
-  if (!hits.length) return;
-
-  let obj = hits[0].object;
-  if (obj.userData.type === "starHit") obj = obj.parent;
-
-  if (obj.userData.role === "promise") {
-    const p = PROMISES[obj.userData.promiseIndex];
-    if (!p) return;
-
-    lastFocus = obj;
-    lastFocusZoom = zoomTarget;
-
-    closeAll();
-    document.getElementById("promiseTitle").innerText = p.title;
-    document.getElementById("promiseText").innerText = p.text;
-    document.getElementById("promiseModal").style.display = "flex";
-  }
-});
 </script>
 
 </body>
