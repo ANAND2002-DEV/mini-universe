@@ -1112,7 +1112,7 @@ camera.position.copy(
   });
 
 
-  // ===== STAR ZOOM-AWARE SCALING (LIKE PLANETS) =====
+  // ===== STAR ZOOM-AWARE SCALING (REALISTIC, CAPPED) =====
   memoryStars.forEach(star => {
     if (!star.userData._zoomBaseScale) {
       star.userData._zoomBaseScale = star.scale.x;
@@ -1120,22 +1120,19 @@ camera.position.copy(
 
     const d = camera.position.distanceTo(star.position);
 
-    // Farther = visually bigger, closer = normal size
+    // Gentle logarithmic scaling so stars stay stars
     const scale = THREE.MathUtils.clamp(
-      d / 520,   // tuning value
+      1 + Math.log(d / 400) * 0.25,
       1.0,
-      2.4
+      1.45
     );
 
     star.scale.setScalar(star.userData._zoomBaseScale * scale);
 
-    // keep glow halo in sync
+    // Glow scales a bit more than core (brightness illusion)
     if (star.userData.glow) {
-      star.userData.glow.scale.set(
-        55 * scale,
-        55 * scale,
-        1
-      );
+      const glowScale = 55 * (1 + (scale - 1) * 1.6);
+      star.userData.glow.scale.set(glowScale, glowScale, 1);
     }
   });
 
