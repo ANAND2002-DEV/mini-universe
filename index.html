@@ -378,24 +378,26 @@ planetData.forEach(p=>{
 });
 
 
-/* ================= SAFE MOON SYSTEM (ALL PLANETS) ================= */
+
+/* ================= SAFE MOON SYSTEM (ALL PLANETS – VARIED) ================= */
 const moonTexture = loader.load("./assets/planets/moon.jpg");
-const moonGeometry = new THREE.SphereGeometry(4, 24, 24);
-const moonMaterial = new THREE.MeshStandardMaterial({
-  map: moonTexture,
-  roughness: 1,
-  metalness: 0
-});
 
 const planetMoonGroups = [];
 
+/*
+ size  : radius of moon
+ base  : base distance from planet
+ gap   : distance gap between moons
+ speed : orbital speed
+ tilt  : max orbital inclination (radians)
+*/
 const MOON_MAP = {
-  Earth:   { count: 1, base: 32, speed: 0.002 },
-  Mars:    { count: 2, base: 26, speed: 0.003 },
-  Jupiter: { count: 4, base: 48, speed: 0.0015 },
-  Saturn:  { count: 3, base: 44, speed: 0.0016 },
-  Uranus:  { count: 2, base: 38, speed: 0.0018 },
-  Neptune: { count: 1, base: 34, speed: 0.002 }
+  Earth:   { count: 1, size: 4.5, base: 32, gap: 0,  speed: 0.002,  tilt: 0.05 },
+  Mars:    { count: 2, size: 3.2, base: 24, gap: 6,  speed: 0.003,  tilt: 0.25 },
+  Jupiter: { count: 4, size: 5.2, base: 46, gap: 9,  speed: 0.0015, tilt: 0.35 },
+  Saturn:  { count: 3, size: 4.8, base: 44, gap: 10, speed: 0.0016, tilt: 0.3 },
+  Uranus:  { count: 2, size: 4.0, base: 38, gap: 8,  speed: 0.0018, tilt: 0.45 },
+  Neptune: { count: 1, size: 4.3, base: 34, gap: 0,  speed: 0.002,  tilt: 0.5 }
 };
 
 planets.forEach(p => {
@@ -408,15 +410,34 @@ planets.forEach(p => {
   group.userData.speed = cfg.speed;
 
   for (let i = 0; i < cfg.count; i++) {
-    const moon = new THREE.Mesh(moonGeometry, moonMaterial.clone());
-    moon.position.set(cfg.base + i * 10, 0, 0);
+    const geo = new THREE.SphereGeometry(cfg.size * (1 - i * 0.12), 24, 24);
+    const mat = new THREE.MeshStandardMaterial({
+      map: moonTexture,
+      roughness: 1,
+      metalness: 0
+    });
+
+    const moon = new THREE.Mesh(geo, mat);
+
+    const dist = cfg.base + i * cfg.gap;
+    moon.position.set(dist, 0, 0);
+
+    // random orbital inclination
+    moon.rotation.z = (Math.random() - 0.5) * cfg.tilt;
+
     moon.userData.spin = 0.002 + Math.random() * 0.002;
+
     group.add(moon);
   }
+
+  // random tilt for whole moon system
+  group.rotation.x = (Math.random() - 0.5) * cfg.tilt;
+  group.rotation.z = (Math.random() - 0.5) * cfg.tilt;
 
   p.mesh.add(group);
   planetMoonGroups.push(group);
 });
+
 
 
 /* ================= ORBIT RINGS ================= */
