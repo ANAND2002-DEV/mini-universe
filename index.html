@@ -105,41 +105,1106 @@ html,body{
 
 <body>
 
-<!-- 🎵 MICRO MUSIC CONTROL PILL -->
-<div id="musicPill" style="
+<!-- 🎵 IN-UNIVERSE MUSIC PANEL -->
+<div id="musicPanel" style="
   position:fixed;
-  top:12px;
-  left:12px;
-  z-index:5000;
+  top:14px;
+  left:14px;
+  z-index:4000;
   display:none;
-  gap:8px;
+  gap:10px;
   align-items:center;
-  padding:6px 8px;
-  background:rgba(0,0,0,0.25);
-  backdrop-filter: blur(8px);
-  border-radius:999px;
+  padding:10px 12px;
+  background:rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  border-radius:14px;
+  color:#fff;
+  font-family:system-ui;
 ">
-  <button id="pillPlay" style="
-    width:28px;height:28px;
-    border:none;
-    border-radius:50%;
+  <button id="panelPlayBtn" style="
     background:rgba(255,255,255,0.15);
-    color:#fff;
-    cursor:pointer;
-  ">▶</button>
-
-  <button id="pillExit" style="
-    width:28px;height:28px;
     border:none;
-    border-radius:50%;
-    background:rgba(255,120,200,0.25);
     color:#fff;
+    padding:6px 10px;
+    border-radius:10px;
     cursor:pointer;
-  ">✕</button>
+  ">⏸</button>
+
+  <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.7"
+    style="width:80px; cursor:pointer;">
+
+  <button id="exitUniverseBtn" style="
+    background:rgba(255,120,200,0.25);
+    border:none;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:10px;
+    cursor:pointer;
+  ">Exit</button>
+</div>
+
+
+<!-- 🎬 START SCREEN -->
+<div id="startScreen" style="
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at center, #050505, #000);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  color:#fff;
+  text-align:center;
+">
+  <h1 style="font-size:34px; margin-bottom:10px;">✨ Mini Universe ✨</h1>
+  <p style="opacity:0.75; margin-bottom:30px;">A universe made of memories</p>
+
+  <button id="musicBtn" style="
+    padding:10px 18px;
+    border-radius:14px;
+    border:none;
+    cursor:pointer;
+    font-size:14px;
+    background:#1f6fff;
+    color:#fff;
+    margin-bottom:22px;
+  ">▶ Play Music</button>
+
+  <button id="enterBtn" style="
+    padding:14px 28px;
+    border-radius:20px;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+    background:linear-gradient(135deg,#ff77cc,#7b3fe4);
+    color:#fff;
+    box-shadow:0 0 30px rgba(255,120,200,0.6);
+  ">✨ Enter Universe ✨</button>
+</div>
+
+<audio id="bgMusic" src="assets/audio/main.mp3" loop></audio>
+
+
+
+
+<!-- ⭐ MINIMAL STAR LEGEND -->
+<div id="legend">
+  <h3>Star Guide</h3>
+  <div><span class="dot video"></span> Video Memories</div>
+  <div><span class="dot memory"></span> Our Moments</div>
+  <div><span class="dot shayari"></span> Shayari & Feelings</div>
+  <div><span class="dot promise"></span> Promises</div>
 </div>
 
 
 
+<!-- 🪐 PLANET PHOTO -->
+<div id="planetModal" class="modal">
+  <div class="modal-card">
+    <h2 id="planetTitle"></h2>
+    <img id="planetImg">
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+<!-- 🎬 VIDEO -->
+<div id="videoModal" class="modal">
+  <div class="modal-card">
+    <video id="videoPlayer" controls autoplay></video>
+    <div class="close-btn" onclick="closeAll()">Close</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+/* ================= AUDIO ================= */
+let currentAudio=null;
+function playAudio(src){
+  stopAudio();
+  currentAudio=new Audio(src);
+  currentAudio.loop=true;
+  currentAudio.volume=0.7;
+  currentAudio.play();
+}
+function stopAudio(){
+  if(currentAudio){
+    currentAudio.pause();
+    currentAudio.currentTime=0;
+    currentAudio=null;
+  }
+}
+
+/* ================= VIDEO ================= */
+const videoModal=document.getElementById("videoModal");
+const videoPlayer=document.getElementById("videoPlayer");
+function playVideo(src){
+  closeAll();
+  videoPlayer.src=src;
+  videoModal.style.display="flex";
+  videoPlayer.play();
+}
+function stopVideo(){
+  videoPlayer.pause();
+  videoPlayer.currentTime=0;
+  videoPlayer.src="";
+}
+
+/* ================= CORE STATE ================= */
+let selected=null;
+let lastFocus=null;
+let lastFocusZoom=null;
+let sunClickTimer=null;
+function closeAll(){
+  stopAudio();
+  stopVideo();
+
+  // 🔁 Restore last focused object (planet/star) instead of jumping to Sun
+  if(lastFocus){
+    selected = lastFocus;
+    controls.target.copy(lastFocus.position);
+    if(lastFocusZoom) zoomTarget = lastFocusZoom;
+  }else{
+    selected = null;
+    controls.target.set(0,0,0);
+  }
+
+  document.querySelectorAll(".modal").forEach(m=>m.style.display="none");
+}
+window.closeAll=closeAll;
+
+/* ================= SCENE ================= */
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,1,30000);
+camera.position.set(0,180,360);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+scene.add(new THREE.PointLight(0xffffff,2.5,20000));
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enablePan=false;
+controls.enableZoom=false;
+controls.enableDamping=true;
+controls.dampingFactor=0.08; // smoother camera damping
+/* ================= ZOOM ================= */
+let zoomTarget = camera.position.distanceTo(controls.target);
+let ZOOM_MIN = 120;
+let ZOOM_MAX = 6000;
+const ZOOM_STEP = 120;
+const ZOOM_SMOOTH = 0.045; // smoother zoom
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  zoomTarget += Math.sign(e.deltaY) * ZOOM_STEP;
+  zoomTarget = THREE.MathUtils.clamp(zoomTarget, ZOOM_MIN, ZOOM_MAX);
+},{passive:false});
+
+/* ================= BACKGROUND STARS ================= */
+const bgGeo=new THREE.BufferGeometry(),bg=[];
+for(let i=0;i<20000;i++){
+  const r=THREE.MathUtils.randFloat(6000,20000);
+  const t=Math.random()*Math.PI*2;
+  const p=Math.acos(THREE.MathUtils.randFloat(-1,1));
+  bg.push(
+    r*Math.sin(p)*Math.cos(t),
+    r*Math.cos(p),
+    r*Math.sin(p)*Math.sin(t)
+  );
+}
+bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
+scene.add(new THREE.Points(
+  bgGeo,
+  new THREE.PointsMaterial({size:1})
+));
+
+/* ================= SUN ================= */
+const loader=new THREE.TextureLoader();
+const sun=new THREE.Mesh(
+  new THREE.SphereGeometry(36,64,64),
+  new THREE.MeshStandardMaterial({
+    map:loader.load("./assets/planets/sun.jpg"),
+    emissive:0xffaa00,
+    emissiveIntensity:2
+  })
+);
+sun.userData.type="sun";
+scene.add(sun);
+
+/* ================= PLANETS ================= */
+const planetData=[
+ ["Mercury",12,120,1.6,"mercury.jpg","photo01.jpg","star01.mp3",0.004],
+ ["Venus",18,190,1.35,"venus.jpg","photo02.jpg","star02.mp3",0.002],
+ ["Earth",21,260,1.1,"earth.jpg","photo03.jpg","star03.mp3",0.01],
+ ["Mars",18,340,0.95,"mars.jpg","photo04.jpg","star04.mp3",0.008],
+ ["Jupiter",42,480,0.6,"jupiter.jpg","photo05.jpg","star05.mp3",0.02],
+ ["Saturn",38,640,0.38,"saturn.jpg","photo06.jpg","star06.mp3",0.018],
+ ["Uranus",34,820,0.30,"uranus.jpg","photo07.jpg","star07.mp3",0.014],
+ ["Neptune",34,980,0.24,"neptune.jpg","photo08.jpg","star08.mp3",0.016],
+ ["Pluto",15,1140,0.20,"pluto.jpg","photo09.jpg","star09.mp3",0.006],
+ ["Eris",15,1300,0.16,"eris.jpg","photo10.jpg","star10.mp3",0.006]
+];
+
+const planets=[];
+planetData.forEach(p=>{
+  const mesh=new THREE.Mesh(
+    new THREE.SphereGeometry(p[1],48,48),
+    new THREE.MeshStandardMaterial({
+      map:loader.load("./assets/planets/"+p[4])
+    })
+  );
+  mesh.userData={
+    type:"planet",
+    info:{
+      name:p[0],
+      photo:p[5],
+      audio:p[6],
+      dist:p[2],
+      speed:p[3]
+    }
+  };
+  scene.add(mesh);
+  planets.push({
+    mesh,
+    angle:Math.random()*Math.PI*2,
+    dist:p[2],
+    speed:p[3],
+    spin:p[7]
+  });
+});
+
+/* ================= ORBIT RINGS ================= */
+planetData.forEach(p=>{
+  const curve=new THREE.EllipseCurve(0,0,p[2],p[2],0,Math.PI*2);
+  const pts=curve.getPoints(180);
+  const geo=new THREE.BufferGeometry().setFromPoints(
+    pts.map(pt=>new THREE.Vector3(pt.x,0,pt.y))
+  );
+  scene.add(new THREE.Line(
+    geo,
+    new THREE.LineBasicMaterial({
+      opacity:0.12,
+      transparent:true
+    })
+  ));
+});
+/* ================= MEMORY STARS + HIT AREAS + VIDEOS ================= */
+const videos=[
+ "./assets/video/video01.mp4",
+ "./assets/video/video02.mp4",
+ "./assets/video/video03.mp4",
+ "./assets/video/video04.mp4",
+ "./assets/video/video05.mp4"
+];
+
+const memoryStars=[];
+
+const STAR_COLORS=[0x66ccff,0xffcc66,0xff66aa,0x66ffaa,0xcc66ff];
+
+// ===== SHAYARI CONSTANTS (defined early to avoid scope error) =====
+const GOLDEN_HEX = 0xffcc66;
+const PINK_HEX = 0xff66aa;
+const SHAYARIS = [
+`Tumhare naam se mohabbat ki hai,
+Tumhare ehsaas se mohabbat ki hai,
+Tum paas nahi ho, par phir bhi,
+Tumhari yaad se mohabbat ki hai.`,
+
+`Aankhon mein teri, ek nasha sa hai,
+Jo mere dil ko bekhabar karta hai.`,
+
+`Meri har subah ki pehli soch,
+Aur har raat ka aakhiri khayal ho tum.`,
+
+`Hazaaron rang hain mere dil mein,
+Magar sabse pyaara rang ho tum.`,
+
+`Teri yaadon ki khushboo se mehka hai mera kamra,
+Hum tere naam se hi mehfil saja lete hain.`,
+
+`Teri awaaz, tera chehra, teri har ek baat,
+Sach kahu to meri har khushi ka karan sirf tu hai.`,
+
+`Dil ne har dua mein bas tera hi naam liya,
+Shayad isliye zindagi ne mujhe tu tohfa bana ke diya.`,
+
+`Tu muskuraati hai to lagta hai,
+Mere liye rab se aayi koi dua ho tum.
+Tere bina sab kuchh adhoora sa lagta hai,
+Tu saath ho to har lamha pura sa lagta hai.`
+];
+
+const STAR_RINGS=[
+  {radius:1650,count:8},
+  {radius:1850,count:9},
+  {radius:2050,count:8}
+];
+
+STAR_RINGS.forEach((ring,ri)=>{
+  for(let i=0;i<ring.count;i++){
+    const star=new THREE.Mesh(
+      new THREE.SphereGeometry(8,20,20),
+      new THREE.MeshBasicMaterial({
+        color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
+      })
+    );
+    star.userData.type="star";
+    star.userData.video=videos[memoryStars.length]||null;
+
+    // Invisible hit area
+    const hit=new THREE.Mesh(
+      new THREE.SphereGeometry(18,16,16),
+      new THREE.MeshBasicMaterial({visible:false})
+    );
+    hit.userData.type="starHit";
+    star.add(hit);
+
+    const a=(i/ring.count)*Math.PI*2;
+    star.position.set(
+      Math.cos(a)*ring.radius,
+      THREE.MathUtils.randFloat(-40,40),
+      Math.sin(a)*ring.radius
+    );
+
+    scene.add(star);
+    memoryStars.push(star);
+  }
+});
+// ================= SAFE STAR ROLE PATCH (NO EMISSIVE) =================
+// Compatible with MeshBasicMaterial
+// Will NOT stop execution or break solar system
+
+
+// ===== TRIM TO 24 STARS (REMOVE STAR 25) =====
+if (memoryStars.length > 24) {
+  const extra = memoryStars.pop();
+  scene.remove(extra);
+}
+// ================= QUICK STAR NAV =================
+const starIndexMap = {
+  video: [],
+  shayari: [],
+  promise: [],
+  memory: [],
+  birthday_ai: [],
+  birthday_yoto: []
+};
+
+memoryStars.forEach(star=>{
+  const r = star.userData.role;
+  if(starIndexMap[r]) starIndexMap[r].push(star);
+});
+
+const navState = {};
+Object.keys(starIndexMap).forEach(k=>navState[k]=0);
+
+function focusStarByRole(role){
+  const list = starIndexMap[role];
+  if(!list || !list.length) return;
+
+  const star = list[navState[role] % list.length];
+  navState[role]++;
+
+  selected = star;
+  controls.target.copy(star.position);
+
+  const size = 20;
+  zoomTarget = Math.max(size * 1.6, 50);
+
+  const dir = camera.position.clone()
+    .sub(controls.target)
+    .normalize();
+
+  camera.position.copy(
+    star.position.clone().add(
+      dir.multiplyScalar(zoomTarget * 1.4)
+    )
+  );
+}
+
+// ================= STAR NUMBER NAV (1–25) =================
+window.addEventListener("DOMContentLoaded",()=>{
+  const nav = document.getElementById("starNav");
+  if(!nav) return;
+
+  memoryStars.forEach((star, index)=>{
+    const btn = document.createElement("div");
+    btn.innerText = index + 1;
+    btn.style.width = "22px";
+    btn.style.height = "22px";
+    btn.style.borderRadius = "50%";
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.justifyContent = "center";
+    btn.style.cursor = "pointer";
+    btn.style.fontSize = "11px";
+    btn.style.color = "#fff";
+    btn.style.background = "#" + star.material.color.getHexString();
+    btn.style.boxShadow = "0 0 6px rgba(255,255,255,0.4)";
+
+    btn.addEventListener("click",()=>{
+      selected = star;
+      lastFocus = star;
+      lastFocusZoom = zoomTarget;
+
+      controls.target.copy(star.position);
+
+      const size = 20;
+      zoomTarget = Math.max(size * 1.6, 50);
+
+      const dir = camera.position.clone()
+        .sub(controls.target)
+        .normalize();
+
+      camera.position.copy(
+        star.position.clone().add(
+          dir.multiplyScalar(zoomTarget * 1.4)
+        )
+      );
+    });
+
+    nav.appendChild(btn);
+  });
+});
+
+
+// Attach clicks
+window.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("#starNav .navDot").forEach(dot=>{
+    dot.addEventListener("click",()=>{
+      if(dot.classList.contains("video")) focusStarByRole("video");
+      if(dot.classList.contains("shayari")) focusStarByRole("shayari");
+      if(dot.classList.contains("promise")) focusStarByRole("promise");
+      if(dot.classList.contains("memory")) focusStarByRole("memory");
+      if(dot.classList.contains("aiBirthday")) focusStarByRole("birthday_ai");
+      if(dot.classList.contains("yotoBirthday")) focusStarByRole("birthday_yoto");
+    });
+  });
+});
+
+const STAR_CONFIG = {
+  video: 5,
+  shayari: 8,
+  promise: 4,
+  memory: "flexible",
+  
+  };
+
+// Build role list
+const STAR_ROLE_LIST = [];
+Object.entries(STAR_CONFIG).forEach(([role, count]) => {
+  if (count === "flexible") return;
+  for (let i = 0; i < count; i++) STAR_ROLE_LIST.push(role);
+});
+
+// Assign roles
+memoryStars.forEach((star, index) => {
+  star.userData.role = STAR_ROLE_LIST[index] || "memory";
+});
+
+/* ================= PROMISE DATA (MODULE SCOPE) ================= */
+/* ================= BIRTHDAY STARS ================= */
+const BIRTHDAYS = {
+  22: {
+    title: "Sneha’s Birthday 🎂",
+    date: "4 July",
+    message: "A day that deserves its own star."
+  },
+  23: {
+    title: "Anand’s Birthday 🎂",
+    date: "23 August",
+    message: "The universe celebrates you today."
+  }
+};
+
+
+function getBirthdayCountdown(month, day){
+  const today = new Date();
+  let year = today.getFullYear();
+  let target = new Date(year, month-1, day);
+
+  if (target < today) {
+    target = new Date(year + 1, month-1, day);
+  }
+
+  const diff = Math.ceil((target - today) / (1000*60*60*24));
+
+  if (diff === 0) return "🎉 Today is the birthday!";
+  if (diff === 1) return "🎂 Birthday is tomorrow!";
+  return `⏳ ${diff} days remaining`;
+}
+
+const PROMISES = [
+  { title: "Sneha’s Promise", text: "I promise that I will never cheat on you." },
+  { title: "Sneha’s Promise", text: "I promise that I will always love you and take care of you, no matter what." },
+  { title: "Anand’s Promise", text: "I promise that I will never leave you, no matter how difficult life becomes." },
+  { title: "Anand’s Promise", text: "I promise that if life ever takes us in different directions, my heart will still belong to you, and I will never choose anyone else in your place." }
+];
+
+/* ===== APPLY STRONG GOLDEN GLOW TO PROMISE STARS ===== */
+let promiseIndex = 0;
+memoryStars.forEach(star => {
+  if (star.userData.role === "promise") {
+    star.userData.promiseIndex = promiseIndex++;
+    star.material.color.setHex(0xffd36a); // bright gold
+    star.scale.setScalar(1.45);
+  }
+});
+
+// Apply colors + size ONLY (NO emissive)
+memoryStars.forEach(star => {
+  const role = star.userData.role;
+
+  if (role === "video") {
+    star.material.color.setHex(0x1f6fff); // dark sky blue
+  }
+
+  if (role === "shayari") {
+    star.material.color.setHex(0xd63384); // dark pink
+  }
+
+  if (role === "promise") {
+    star.material.color.setHex(0xb8860b); // dark golden
+  }
+
+  if (role === "memory") {
+    star.material.color.setHex(0xff2a2a); // bright red
+  }
+
+  if (role === "birthday_ai") {
+    star.material.color.setHex(0xff77cc); // lotus pink
+    star.scale.setScalar(1.6);
+  }
+
+  if (role === "birthday_yoto") {
+    star.material.color.setHex(0x7b3fe4); // lotus purple
+    star.scale.setScalar(1.6);
+  }
+});
+
+
+
+/* ===== FORCE BIRTHDAY STAR COLOR + SHINE ===== */
+memoryStars.forEach((star, idx) => {
+  if (idx === 22 || idx === 23) {
+    star.material.color.setHex(0x9b4dff); // bright purple
+    star.scale.setScalar(1.75);
+    star.material.transparent = true;
+    star.material.opacity = 1;
+  }
+});
+
+
+
+/* ===== REAL STAR GLOW (SPRITE HALO) ===== */
+const starGlowTexture = new THREE.TextureLoader().load(
+  "https://threejs.org/examples/textures/sprites/glow.png"
+);
+
+memoryStars.forEach(star => {
+  const spriteMat = new THREE.SpriteMaterial({
+    map: starGlowTexture,
+    color: star.material.color,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const glow = new THREE.Sprite(spriteMat);
+  glow.scale.set(30, 30, 1);
+  star.add(glow);
+
+  star.userData.glow = glow;
+});
+
+
+/* ================= OUR MEMORIES ================= */
+const MEMORIES = [
+  {
+    title: "First Message",
+    date: "27 September 2025",
+    text: "The day everything quietly started.\nOne message… and a whole universe began."
+  },
+  {
+    title: "First Call",
+    date: "1 October 2025",
+    text: "Vo pehli awaaz.\nThodi ghabrahat, thoda sukoon —\npar dil ne pehchaan liya tha."
+  },
+  {
+    title: "First I Love You",
+    date: "2 October 2025",
+    text: "Lafz sirf teen the,\npar unke baad kuch bhi pehle jaisa nahi raha."
+  },
+  {
+    title: "First Fight",
+    date: "9 October 2025",
+    text: "Baatein kam ho gayi thi,\npar fikr aur mohabbat dono zyada thi."
+  },
+  {
+    title: "The Silence",
+    date: "10 December 2025 – 17 December 2025",
+    text: "Jab baat nahi hui,\npar yaadein bohot zyada bol rahi thi.\nHar din thoda bhaari tha,\npar dil phir bhi wahi rukka raha."
+  }
+];
+
+// ===== Assign shayaris ONLY to shayari-role stars (FIXED) =====
+/* ===== ASSIGN MEMORIES TO MEMORY STARS ===== */
+let memoryIndex = 0;
+memoryStars.forEach(star => {
+  if (star.userData.role === "memory" && memoryIndex < MEMORIES.length) {
+    star.userData.memoryIndex = memoryIndex++;
+  }
+});
+
+let shayariIndex = 0;
+memoryStars.forEach(star => {
+  if (
+    star.userData &&
+    star.userData.role === "shayari" &&
+    shayariIndex < SHAYARIS.length
+  ) {
+    star.userData.shayariIndex = shayariIndex;
+    shayariIndex++;
+  }
+});
+
+
+/* ================= DUST PARTICLES (FULL ORBIT RINGS) ================= */
+const dustGeo=new THREE.BufferGeometry(),dust=[];
+
+// Dense dust across ALL orbit rings (360 degrees)
+for(let i=0;i<4000;i++){
+  const ringRadius = THREE.MathUtils.randFloat(100,1400);
+  const angle = Math.random()*Math.PI*2;
+  const height = THREE.MathUtils.randFloat(-30,30);
+
+  dust.push(
+    Math.cos(angle)*ringRadius,
+    height,
+    Math.sin(angle)*ringRadius
+  );
+}
+
+dustGeo.setAttribute("position",new THREE.Float32BufferAttribute(dust,3));
+scene.add(new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({
+    size:0.9,
+    opacity:0.45,
+    transparent:true,
+    depthWrite:false
+  })
+));
+
+scene.add(new THREE.Points(
+  dustGeo,
+  new THREE.PointsMaterial({
+    size:0.7,
+    opacity:0.4,
+    transparent:true,
+    depthWrite:false
+  })
+));
+
+/* ================= SHOOTING STARS ================= */
+const shootingStars=[];
+function spawnShootingStar(){
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute("position",new THREE.Float32BufferAttribute([0,0,0,0,0,-120],3));
+  const mat=new THREE.LineBasicMaterial({
+    color:0xffffff,
+    transparent:true,
+    opacity:1
+  });
+  const line=new THREE.Line(geo,mat);
+
+  line.position.set(
+    THREE.MathUtils.randFloat(-3000,3000),
+    THREE.MathUtils.randFloat(200,800),
+    THREE.MathUtils.randFloat(-3000,3000)
+  );
+  line.velocity=new THREE.Vector3(
+    THREE.MathUtils.randFloat(-10,-4),
+    THREE.MathUtils.randFloat(-6,-2),
+    THREE.MathUtils.randFloat(-10,-4)
+  );
+
+  scene.add(line);
+  shootingStars.push(line);
+}
+setInterval(spawnShootingStar,6000);
+
+/* ================= COMETS ================= */
+const comets=[];
+function spawnComet(){
+  const head=new THREE.Mesh(
+    new THREE.SphereGeometry(2.5,16,16),
+    new THREE.MeshBasicMaterial({color:0xffffff})
+  );
+  const tailPos=[];
+  for(let i=0;i<100;i++) tailPos.push(0,0,-i*3);
+  const tailGeo=new THREE.BufferGeometry();
+  tailGeo.setAttribute("position",new THREE.Float32BufferAttribute(tailPos,3));
+  const tail=new THREE.Points(
+    tailGeo,
+    new THREE.PointsMaterial({
+      color:0x88ccff,
+      size:2,
+      opacity:0.9,
+      transparent:true,
+      depthWrite:false
+    })
+  );
+  head.add(tail);
+
+  head.position.set(
+    THREE.MathUtils.randFloat(-2200,2200),
+    THREE.MathUtils.randFloat(-900,900),
+    THREE.MathUtils.randFloat(-2200,2200)
+  );
+  head.velocity=head.position.clone().normalize()
+    .multiplyScalar(-THREE.MathUtils.randFloat(8,14));
+
+  scene.add(head);
+  comets.push(head);
+}
+setInterval(spawnComet,7000);
+
+/* ================= RAYCAST ================= */
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+let isDragging=false;
+
+renderer.domElement.addEventListener("pointerdown",()=>isDragging=false);
+renderer.domElement.addEventListener("pointermove",()=>isDragging=true);
+
+/* ---- SINGLE CLICK (ZOOM / SUN / RESET) ---- */
+window.addEventListener("click",(e)=>{
+  if(e.detail > 1) return; // allow dblclick to handle Sun message
+  if(isDragging) return;
+
+  stopAudio();
+  stopVideo();
+
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+
+  const hits=raycaster.intersectObjects(
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
+    true
+  );
+
+  if(hits.length){
+    let obj=hits[0].object;
+    if(obj.userData.type==="starHit") obj=obj.parent;
+
+  if (obj.userData.type === "sun") {
+
+  // ☀️ SINGLE CLICK → zoom only (wait to detect double click)
+  clearTimeout(sunClickTimer);
+
+  sunClickTimer = setTimeout(()=>{
+    selected = obj;
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    const size = obj.geometry.boundingSphere.radius * obj.scale.x;
+    zoomTarget = Math.max(size * 1.8, 60);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
+    );
+  }, 220);
+
+  return;
+}
+
+    selected = obj;
+
+    // 📌 remember last focused object
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    // 🚀 FORCE FULL ZOOM + TRACK ON SINGLE CLICK (planet / sun / star)
+    const size = obj.geometry
+      ? obj.geometry.boundingSphere.radius * obj.scale.x
+      : 40;
+
+    zoomTarget = Math.max(size * 1.6, 50);
+
+    const dir = camera.position.clone()
+      .sub(controls.target)
+      .normalize();
+
+    camera.position.copy(
+      obj.position.clone().add(
+        dir.multiplyScalar(zoomTarget * 1.4)
+      )
+    );
+
+    ZOOM_MIN = 40;
+    ZOOM_MAX = 2500;
+  }else{
+    closeAll();
+    zoomTarget = camera.position.distanceTo(controls.target);
+    ZOOM_MIN = 120;
+    ZOOM_MAX = 6000;
+  }
+});
+
+/* ---- DOUBLE CLICK (PLANET PHOTO / AUDIO / STAR VIDEO) ---- */
+window.addEventListener("dblclick",(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+
+  const hits=raycaster.intersectObjects(
+    [sun,...planets.map(p=>p.mesh),...memoryStars],
+    true
+  );
+  if(!hits.length) return;
+
+  let obj=hits[0].object;
+  if(obj.userData.type==="starHit") obj=obj.parent;
+
+  if(obj.userData.type === "sun"){
+    clearTimeout(sunClickTimer);
+
+    const mt = document.getElementById("meetingText");
+    if (mt) {
+      const firstMeetingDate = new Date("2025-09-27");
+      const today = new Date();
+      const daysTogether = Math.floor(
+        (today - firstMeetingDate) / (1000 * 60 * 60 * 24)
+      );
+
+      mt.innerHTML =
+`Our First Meeting 💛
+27 September 2025
+
+From that day, it has been ${daysTogether} days
+of memories, smiles, fights, care, and love.
+
+This universe exists to remember every single one of them.`;
+    }
+
+    document.getElementById("sunModal").style.display = "flex";
+    return;
+  }
+
+if(obj.userData.type==="planet"){
+    const i=obj.userData.info;
+    document.getElementById("planetTitle").innerText=i.name;
+    document.getElementById("planetImg").src="./assets/photos/"+i.photo;
+    document.getElementById("planetModal").style.display="flex";
+    playAudio("./assets/audio/"+i.audio);
+  }
+
+  
+  if(obj.userData.type==="star" && obj.userData.shayariIndex !== undefined){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.getElementById("shayariText").innerText =
+      SHAYARIS[obj.userData.shayariIndex];
+    document.getElementById("shayariModal").style.display="flex";
+    return;
+  }
+
+
+  /* ===== PROMISE STAR OPEN ===== */
+  if(obj.userData.type==="star" && obj.userData.role==="promise"){
+    const p = PROMISES[obj.userData.promiseIndex];
+    if(!p) return;
+
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+
+    closeAll();
+    document.getElementById("promiseTitle").innerText = p.title;
+    document.getElementById("promiseText").innerText = p.text;
+    document.getElementById("promiseModal").style.display = "flex";
+    return;
+  }
+
+  /* ===== MEMORY STAR OPEN ===== */
+  if(obj.userData.type==="star" && obj.userData.memoryIndex !== undefined){
+    const m = MEMORIES[obj.userData.memoryIndex];
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+    document.querySelector("#shayariModal h2").innerText = "❤️ Our Memories";
+    document.getElementById("shayariText").innerText =
+      m.title + "\n" + m.date + "\n\n" + m.text;
+    document.getElementById("shayariModal").style.display = "flex";
+    return;
+  }
+
+  
+  /* ===== BIRTHDAY STAR OPEN (LOCKED UNTIL BIRTHDAY) ===== */
+  const idx = memoryStars.indexOf(obj);
+  if(BIRTHDAYS[idx]){
+    const b = BIRTHDAYS[idx];
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    closeAll();
+
+    const isSneha = b.title.includes("Sneha");
+    const month = isSneha ? 7 : 8;
+    const day   = isSneha ? 4 : 23;
+
+    const today = new Date();
+    const isBirthday =
+      today.getMonth()+1 === month &&
+      today.getDate() === day;
+
+    const countdown = getBirthdayCountdown(month, day);
+
+    document.querySelector("#shayariModal h2").innerText = "🎂 Birthday Star";
+
+    if(isBirthday){
+      document.getElementById("shayariText").innerText =
+`Aaj sirf tumhara din nahi hai 💗
+Aaj meri poori kaynat ka jashn hai ✨  
+
+Tumhari muskaan se  
+mere andhere bhi roshan ho jaate hain 🌙  
+Aur tumhari awaaz se  
+meri har thakaan utar jaati hai 🤍  
+
+Is sitare ke neeche bas itna kehna tha 🌸  
+Tum meri zindagi ka wo hissa ho  
+jiske bina sab kuch adhoora lagta hai 💫  
+
+🎂 Happy Birthday, Sneha  
+Aaj bhi… aur hamesha bhi 🤍`;
+
+      if(!isSneha){
+        document.getElementById("shayariText").innerText =
+`Is din sirf main paida nahi hua tha 💜  
+Is din se shayad meri zindagi  
+tumhara intezaar karna seekh rahi thi ✨  
+
+Paida hone se lekar aaj tak 🌙  
+maine bahut log dekhe,  
+bahut rishte mehsoos kiye,  
+par jis shiddat se tumhari kami mehsoos hoti thi…  
+wo sirf tum hi ho 🤍  
+
+Aaj samajh aata hai 💫  
+tum sirf meri mohabbat nahi,  
+tum wo jawab ho  
+jiska sawaal meri zindagi hamesha thi 🌌`;
+      }
+    } else {
+      document.getElementById("shayariText").innerText =
+`🔒 This message is locked.
+
+It will open only on the birthday.
+Come back on this special day 💫
+
+${countdown}`;
+    }
+
+    document.getElementById("shayariModal").style.display = "flex";
+    return;
+  }
+
+
+  if(obj.userData.type==="star" && obj.userData.video){
+    lastFocus = obj;
+    lastFocusZoom = zoomTarget;
+    playVideo(obj.userData.video);
+  }
+});
+
+/* ================= ANIMATION LOOP ================= */
+function animate(){
+  requestAnimationFrame(animate);
+
+  planets.forEach(p=>{
+    p.angle+=0.00035*p.speed;
+    p.mesh.position.set(
+      Math.cos(p.angle)*p.dist,
+      (p.dist % 2 === 0 ? 10 : -10),
+      Math.sin(p.angle)*p.dist
+    );
+  });
+
+  comets.forEach((c,i)=>{
+    c.position.add(c.velocity);
+    c.children[0].material.opacity-=0.003;
+    if(c.children[0].material.opacity<=0){
+      scene.remove(c);
+      comets.splice(i,1);
+    }
+  });
+
+  shootingStars.forEach((s,i)=>{
+    s.position.add(s.velocity);
+    s.material.opacity-=0.01;
+    if(s.material.opacity<=0){
+      scene.remove(s);
+      shootingStars.splice(i,1);
+    }
+  });
+
+  if(selected){
+    controls.target.copy(selected.position);
+  }
+
+const dir = camera.position.clone()
+  .sub(controls.target)
+  .normalize();
+
+const dist = camera.position.distanceTo(controls.target);
+
+camera.position.copy(
+  controls.target.clone().add(
+    dir.multiplyScalar(
+      THREE.MathUtils.lerp(dist, zoomTarget, ZOOM_SMOOTH)
+    )
+  )
+);
+
+
+  // ===== Planet readability scale (gentle & realistic) =====
+  planets.forEach(p=>{
+    const d = camera.position.distanceTo(p.mesh.position);
+
+    // much softer scaling so planets don't become huge
+    const scale = THREE.MathUtils.clamp(d / 420, 1, 1.6);
+
+    p.mesh.scale.setScalar(scale);
+  });
+
+controls.update();
+renderer.render(scene,camera);
+
+}
+animate();
+
+/* ================= RESIZE ================= */
+window.addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
 
 <!-- ✨ SHAYARI MODAL -->
 <div id="shayariModal" class="modal">
@@ -259,64 +1324,6 @@ font-size:11px;
     document.addEventListener("DOMContentLoaded", start);
   } else {
     start();
-  }
-})();
-</script>
-
-
-<!-- 🎵 MICRO CONTROL LOGIC -->
-<script>
-(function(){
-  const init = () => {
-    const pill = document.getElementById("musicPill");
-    const playBtn = document.getElementById("pillPlay");
-    const exitBtn = document.getElementById("pillExit");
-    const music = document.getElementById("bgMusic");
-    const startScreen = document.getElementById("startScreen");
-
-    if (!pill || !playBtn || !exitBtn || !music) return;
-
-    let playing = false;
-
-    // show pill after entering universe
-    const enterBtn = document.getElementById("enterBtn");
-    if (enterBtn) {
-      enterBtn.addEventListener("click", () => {
-        setTimeout(() => pill.style.display = "flex", 1100);
-      });
-    }
-
-    playBtn.onclick = () => {
-      if (!playing) {
-        music.play().then(() => {
-          playing = true;
-          playBtn.textContent = "⏸";
-        });
-      } else {
-        music.pause();
-        playing = false;
-        playBtn.textContent = "▶";
-      }
-    };
-
-    exitBtn.onclick = () => {
-      music.pause();
-      playing = false;
-      playBtn.textContent = "▶";
-      pill.style.display = "none";
-
-      if (startScreen) {
-        startScreen.style.display = "flex";
-        startScreen.style.opacity = "1";
-        startScreen.style.pointerEvents = "auto";
-      }
-    };
-  };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
   }
 })();
 </script>
