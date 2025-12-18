@@ -395,6 +395,23 @@ STAR_RINGS.forEach((ring,ri)=>{
     memoryStars.push(star);
   }
 });
+
+/* ===== STAR COLOR TEMPERATURE VARIATION ===== */
+const STAR_TEMP_COLORS = [
+  0xffffff, // white
+  0xbfd9ff, // cool blue
+  0xfff1c1  // warm yellow
+];
+
+memoryStars.forEach(star => {
+  // keep role color hint but blend with temperature
+  const tempColor = new THREE.Color(
+    STAR_TEMP_COLORS[Math.floor(Math.random() * STAR_TEMP_COLORS.length)]
+  );
+  const base = star.material.color.clone();
+  star.material.color.lerp(tempColor, 0.35); // subtle blend
+});
+
 // ================= SAFE STAR ROLE PATCH (NO EMISSIVE) =================
 // Compatible with MeshBasicMaterial
 // Will NOT stop execution or break solar system
@@ -543,6 +560,19 @@ const BIRTHDAYS = {
 };
 
 
+
+/* ===== BIRTHDAY GLOW INTENSITY BASED ON COUNTDOWN ===== */
+function birthdayGlowFactor(month, day){
+  const today = new Date();
+  let year = today.getFullYear();
+  let target = new Date(year, month-1, day);
+  if (target < today) target = new Date(year+1, month-1, day);
+
+  const days = Math.max(0, Math.ceil((target - today) / (1000*60*60*24)));
+  // closer birthday => stronger glow (range 0.6 → 1.4)
+  return THREE.MathUtils.clamp(1.4 - days / 40, 0.6, 1.4);
+}
+
 function getBirthdayCountdown(month, day){
   const today = new Date();
   let year = today.getFullYear();
@@ -643,6 +673,33 @@ memoryStars.forEach(star => {
   star.userData.glow = glow;
 });
 
+
+
+/* ===== CONSTELLATION LINKS FOR MEMORY STARS ===== */
+const memoryConstellation = new THREE.Group();
+scene.add(memoryConstellation);
+
+function buildMemoryConstellation(){
+  memoryConstellation.clear();
+  const mems = memoryStars.filter(s => s.userData.role === "memory");
+
+  for(let i=0;i<mems.length-1;i++){
+    const a = mems[i].position;
+    const b = mems[i+1].position;
+
+    const geo = new THREE.BufferGeometry().setFromPoints([a,b]);
+    const mat = new THREE.LineBasicMaterial({
+      color:0xffffff,
+      transparent:true,
+      opacity:0.12
+    });
+
+    const line = new THREE.Line(geo, mat);
+    memoryConstellation.add(line);
+  }
+}
+
+buildMemoryConstellation();
 
 /* ================= OUR MEMORIES ================= */
 const MEMORIES = [
@@ -1113,6 +1170,18 @@ camera.position.copy(
 
 
   // ===== REAL STAR TWINKLE (SAFE) =====
+  // Birthday glow scaling
+  memoryStars.forEach((star, idx) => {
+    if (idx === 22 || idx === 23) {
+      const isSneha = idx === 22;
+      const factor = birthdayGlowFactor(isSneha ? 7 : 8, isSneha ? 4 : 23);
+      star.scale.setScalar(star.userData._baseScale * factor);
+      if (star.userData.glow) {
+        star.userData.glow.material.opacity = 0.6 * factor;
+      }
+    }
+  });
+
   memoryStars.forEach(star => {
     if (!star.userData._twinkleInit) {
       star.userData._twinkleInit = true;
