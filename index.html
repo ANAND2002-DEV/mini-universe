@@ -1201,6 +1201,26 @@ ${countdown}`;
   }
 });
 
+
+/* ===== SAFE MOBILE RESIZE FIX (DESKTOP UNAFFECTED) ===== */
+const __isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+if (__isMobile) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+}
+
+const __enterBtnFix = document.getElementById("enterBtn");
+if (__enterBtnFix && __isMobile) {
+  __enterBtnFix.addEventListener("click", () => {
+    setTimeout(() => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }, 700);
+  });
+}
+
+
 /* ================= ANIMATION LOOP ================= */
 function animate(){
   requestAnimationFrame(animate);
