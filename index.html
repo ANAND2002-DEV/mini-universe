@@ -92,6 +92,15 @@ html,body{
   }
 }
 </script>
+
+<style>
+@keyframes birthdayGlow {
+  0% { box-shadow: 0 0 6px rgba(160,80,255,0.6); }
+  50% { box-shadow: 0 0 18px rgba(190,120,255,1); }
+  100% { box-shadow: 0 0 6px rgba(160,80,255,0.6); }
+}
+</style>
+
 </head>
 
 <body>
@@ -593,8 +602,10 @@ memoryStars.forEach(star => {
   }
 
   if (role === "birthday_yoto") {
-    star.material.color.setHex(0x7b3fe4); // lotus purple
-    star.scale.setScalar(1.6);
+    star.material.color.setHex(0x9b4dff); // bright purple
+    star.scale.setScalar(1.75);
+    star.material.transparent = true;
+    star.material.opacity = 1;
   }
 });
 
@@ -921,6 +932,7 @@ if(obj.userData.type==="planet"){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     closeAll();
+    document.querySelector("#shayariModal h2").innerText = "❤️ Our Memories";
     document.getElementById("shayariText").innerText =
       m.title + "\n" + m.date + "\n\n" + m.text;
     document.getElementById("shayariModal").style.display = "flex";
@@ -941,8 +953,10 @@ if(obj.userData.type==="planet"){
       isSneha ? 4 : 23
     );
 
+    document.querySelector("#shayariModal h2").innerText = "❤️ Our Memories";
+
     document.getElementById("shayariText").innerHTML =
-      "<strong>" + b.title + "</strong>\n" +
+      "<strong>Birthday Star</strong>\n" +
       b.date + "\n" +
       "<strong>" + countdown + "</strong>\n\n" +
       "<button id='birthdayMsgBtn' style=\"margin-top:12px;padding:8px 14px;border:none;border-radius:10px;background:#ff77cc;color:#000;cursor:pointer;font-weight:bold;\">View Birthday Message</button>";
