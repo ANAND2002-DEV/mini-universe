@@ -215,10 +215,6 @@ html,body{
 </div>
 
 <script type="module">
-
-/* ===== GLOBAL DEVICE DETECTION (SAFE) ===== */
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
 import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
@@ -296,9 +292,7 @@ controls.enableZoom=false;
 controls.enableDamping=true;
 controls.dampingFactor=0.08; // smoother camera damping
 /* ================= ZOOM ================= */
-let if (typeof zoomTarget !== 'undefined') {
-  zoomTarget = camera.position.distanceTo(controls.target);
-}
+let zoomTarget = camera.position.distanceTo(controls.target);
 let ZOOM_MIN = 120;
 let ZOOM_MAX = 6000;
 const ZOOM_STEP = 120;
@@ -1035,9 +1029,7 @@ window.addEventListener("click",(e)=>{
     ZOOM_MAX = 2500;
   }else{
     closeAll();
-    if (typeof zoomTarget !== 'undefined') {
-  zoomTarget = camera.position.distanceTo(controls.target);
-}
+    zoomTarget = camera.position.distanceTo(controls.target);
     ZOOM_MIN = 120;
     ZOOM_MAX = 6000;
   }
@@ -1208,6 +1200,26 @@ ${countdown}`;
     playVideo(obj.userData.video);
   }
 });
+
+
+/* ===== SAFE MOBILE RESIZE FIX (DESKTOP UNAFFECTED) ===== */
+const __isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+if (__isMobile) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+}
+
+const __enterBtnFix = document.getElementById("enterBtn");
+if (__enterBtnFix && __isMobile) {
+  __enterBtnFix.addEventListener("click", () => {
+    setTimeout(() => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }, 700);
+  });
+}
+
 
 /* ================= ANIMATION LOOP ================= */
 function animate(){
