@@ -91,19 +91,6 @@ html,body{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
-
-// ===== Mobile resize fix after entering universe =====
-const __enterBtn = document.getElementById("enterBtn");
-if (__enterBtn && isMobile) {
-  __enterBtn.addEventListener("click", () => {
-    setTimeout(() => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    }, 600);
-  });
-}
-
 </script>
 
 <style>
@@ -295,13 +282,6 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
-
-// ===== WebGL safety (mobile) =====
-renderer.domElement.addEventListener("webglcontextlost", function(e){
-  e.preventDefault();
-  alert("WebGL context lost. Please reload the page.");
-}, false);
-
 
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
@@ -810,7 +790,7 @@ memoryStars.forEach((star, idx) => {
 memoryStars.forEach(star => {
   if (star.material.emissive === undefined) return;
   star.material.emissive = star.material.color.clone();
-  star.material.emissiveIntensity = isMobile ? 0.35 : 0.6;
+  star.material.emissiveIntensity = 0.6;
   star.userData._glowPhase = Math.random() * Math.PI * 2;
 });
 
