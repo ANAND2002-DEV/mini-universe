@@ -101,15 +101,6 @@ html,body{
 }
 </style>
 
-
-<style>
-@keyframes starTwinkle {
-  0%   { opacity: 0.85; }
-  50%  { opacity: 1; }
-  100% { opacity: 0.85; }
-}
-</style>
-
 </head>
 
 <body>
@@ -629,6 +620,30 @@ memoryStars.forEach((star, idx) => {
 });
 
 
+
+/* ===== REAL STAR GLOW (SPRITE HALO) ===== */
+const starGlowTexture = new THREE.TextureLoader().load(
+  "https://threejs.org/examples/textures/sprites/glow.png"
+);
+
+memoryStars.forEach(star => {
+  const spriteMat = new THREE.SpriteMaterial({
+    map: starGlowTexture,
+    color: star.material.color,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const glow = new THREE.Sprite(spriteMat);
+  glow.scale.set(30, 30, 1);
+  star.add(glow);
+
+  star.userData.glow = glow;
+});
+
+
 /* ================= OUR MEMORIES ================= */
 const MEMORIES = [
   {
@@ -958,7 +973,8 @@ if(obj.userData.type==="planet"){
     return;
   }
 
-  /* ===== BIRTHDAY STAR OPEN ===== */
+  
+  /* ===== BIRTHDAY STAR OPEN (LOCKED UNTIL BIRTHDAY) ===== */
   const idx = memoryStars.indexOf(obj);
   if(BIRTHDAYS[idx]){
     const b = BIRTHDAYS[idx];
@@ -967,24 +983,20 @@ if(obj.userData.type==="planet"){
     closeAll();
 
     const isSneha = b.title.includes("Sneha");
-    const countdown = getBirthdayCountdown(
-      isSneha ? 7 : 8,
-      isSneha ? 4 : 23
-    );
+    const month = isSneha ? 7 : 8;
+    const day   = isSneha ? 4 : 23;
+
+    const today = new Date();
+    const isBirthday =
+      today.getMonth()+1 === month &&
+      today.getDate() === day;
+
+    const countdown = getBirthdayCountdown(month, day);
 
     document.querySelector("#shayariModal h2").innerText = "🎂 Birthday Star";
-    document.getElementById("shayariText").innerHTML =
-      "<strong>" + b.date + "</strong>\n" +
-      "<strong>" + countdown + "</strong>\n\n" +
-      "<button id='birthdayMsgBtn' style=\"margin-top:12px;padding:8px 14px;border:none;border-radius:10px;background:#c084ff;color:#000;cursor:pointer;font-weight:bold;\">View Birthday Message</button>";
 
-    document.getElementById("shayariModal").style.display = "flex";
-
-    setTimeout(()=>{
-      const btn = document.getElementById("birthdayMsgBtn");
-      if(btn){
-        btn.onclick = ()=>{
-          document.getElementById("shayariText").innerText =
+    if(isBirthday){
+      document.getElementById("shayariText").innerText =
 `Aaj sirf tumhara din nahi hai 💗
 Aaj meri poori kaynat ka jashn hai ✨  
 
@@ -999,8 +1011,9 @@ jiske bina sab kuch adhoora lagta hai 💫
 
 🎂 Happy Birthday, Sneha  
 Aaj bhi… aur hamesha bhi 🤍`;
-          if(!isSneha){
-            document.getElementById("shayariText").innerText =
+
+      if(!isSneha){
+        document.getElementById("shayariText").innerText =
 `Is din sirf main paida nahi hua tha 💜  
 Is din se shayad meri zindagi  
 tumhara intezaar karna seekh rahi thi ✨  
@@ -1015,13 +1028,21 @@ Aaj samajh aata hai 💫
 tum sirf meri mohabbat nahi,  
 tum wo jawab ho  
 jiska sawaal meri zindagi hamesha thi 🌌`;
-          }
-        };
       }
-    },0);
+    } else {
+      document.getElementById("shayariText").innerText =
+`🔒 This message is locked.
 
+It will open only on the birthday.
+Come back on this special day 💫
+
+${countdown}`;
+    }
+
+    document.getElementById("shayariModal").style.display = "flex";
     return;
   }
+
 
   if(obj.userData.type==="star" && obj.userData.video){
     lastFocus = obj;
@@ -1088,18 +1109,6 @@ camera.position.copy(
     const scale = THREE.MathUtils.clamp(d / 420, 1, 1.6);
 
     p.mesh.scale.setScalar(scale);
-  });
-
-
-  // ===== STAR SHINE / TWINKLE (REALISTIC) =====
-  memoryStars.forEach(star => {
-    if (star.userData.baseScale === undefined) {
-      star.userData.baseScale = star.scale.x;
-      star.userData.twinkleSpeed = 0.0015 + Math.random() * 0.0025;
-    }
-    const t = Date.now() * star.userData.twinkleSpeed;
-    const pulse = 1 + Math.sin(t) * 0.035;
-    star.scale.setScalar(star.userData.baseScale * pulse);
   });
 
 controls.update();
