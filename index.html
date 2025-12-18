@@ -101,6 +101,15 @@ html,body{
 }
 </style>
 
+
+<style>
+@media (max-width: 768px){
+  #musicPill{ transform: scale(1.15); }
+  #legend{ font-size:12px; bottom:10px; left:10px; }
+  #starNav{ transform:translateX(-50%) scale(0.9); }
+}
+</style>
+
 </head>
 
 <body>
@@ -283,6 +292,16 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
+/* ================= MOBILE OPTIMIZATION (SAFE) ================= */
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+if (isMobile) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  controls.rotateSpeed = 0.6;
+  controls.dampingFactor = 0.1;
+}
+
+
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
@@ -317,10 +336,13 @@ for(let i=0;i<20000;i++){
   );
 }
 bgGeo.setAttribute("position",new THREE.Float32BufferAttribute(bg,3));
-scene.add(new THREE.Points(
+
+const bgStars = new THREE.Points(
   bgGeo,
-  new THREE.PointsMaterial({size:1})
-));
+  new THREE.PointsMaterial({size: isMobile ? 0.7 : 1})
+);
+scene.add(bgStars);
+
 
 /* ================= SUN ================= */
 const loader=new THREE.TextureLoader();
@@ -539,7 +561,7 @@ STAR_RINGS.forEach((ring,ri)=>{
 
     // Invisible hit area
     const hit=new THREE.Mesh(
-      new THREE.SphereGeometry(18,16,16),
+      new THREE.SphereGeometry(isMobile ? 26 : 18,16,16),
       new THREE.MeshBasicMaterial({visible:false})
     );
     hit.userData.type="starHit";
@@ -1202,8 +1224,22 @@ ${countdown}`;
 });
 
 /* ================= ANIMATION LOOP ================= */
+
+let lastFrameTime = 0;
+const MOBILE_FRAME_INTERVAL = 1000 / 40;
+
 function animate(){
+  
+  if (isMobile) {
+    const now = performance.now();
+    if (now - lastFrameTime < MOBILE_FRAME_INTERVAL) {
+      requestAnimationFrame(animate);
+      return;
+    }
+    lastFrameTime = now;
+  }
   requestAnimationFrame(animate);
+
 
   planets.forEach(p=>{
     p.angle+=0.00035*p.speed;
