@@ -283,17 +283,6 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// ===== MOBILE UNLOCK FOCUS (TWO-FINGER TOUCH) =====
-if (isMobile) {
-  renderer.domElement.addEventListener("touchmove", (e) => {
-    if (e.touches.length >= 2) {
-      selected = null;
-      lastFocus = null;
-    }
-  }, { passive: true });
-}
-
-
 scene.add(new THREE.AmbientLight(0xffffff,0.5));
 scene.add(new THREE.PointLight(0xffffff,2.5,20000));
 
@@ -1296,12 +1285,6 @@ camera.position.copy(
     });
   }
 
-
-  
-  // 📱 Mobile pinch zoom sync
-  if (isMobile) {
-    zoomTarget = camera.position.distanceTo(controls.target);
-  }
 
   // ===== Planet readability scale (gentle & realistic) =====
   planets.forEach(p=>{
