@@ -105,6 +105,85 @@ html,body{
 
 <body>
 
+<!-- 🎵 MICRO MUSIC CONTROL PILL -->
+<div id="musicPill" style="
+  position:fixed;
+  top:12px;
+  left:12px;
+  z-index:5000;
+  display:none;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  background:rgba(0,0,0,0.25);
+  backdrop-filter:blur(8px);
+  border-radius:999px;
+">
+  <button id="pillPlay" style="
+    width:28px;height:28px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    color:#fff;
+    cursor:pointer;
+  ">▶</button>
+
+  <input id="pillVolume" type="range" min="0" max="1" step="0.01" value="0.7"
+    style="width:60px; height:4px; cursor:pointer;">
+
+  <button id="pillExit" style="
+    width:28px;height:28px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,120,200,0.25);
+    color:#fff;
+    cursor:pointer;
+  ">✕</button>
+</div>
+
+
+<!-- 🎬 START SCREEN -->
+<div id="startScreen" style="
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at center, #050505, #000);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  color:#fff;
+  text-align:center;
+">
+  <h1 style="font-size:34px; margin-bottom:10px;">✨ Mini Universe ✨</h1>
+  <p style="opacity:0.75; margin-bottom:30px;">A universe made of memories</p>
+
+  <button id="musicBtn" style="
+    padding:10px 18px;
+    border-radius:14px;
+    border:none;
+    cursor:pointer;
+    font-size:14px;
+    background:#1f6fff;
+    color:#fff;
+    margin-bottom:22px;
+  ">▶ Play Music</button>
+
+  <button id="enterBtn" style="
+    padding:14px 28px;
+    border-radius:20px;
+    border:none;
+    cursor:pointer;
+    font-size:16px;
+    background:linear-gradient(135deg,#ff77cc,#7b3fe4);
+    color:#fff;
+    box-shadow:0 0 30px rgba(255,120,200,0.6);
+  ">✨ Enter Universe ✨</button>
+</div>
+
+<audio id="bgMusic" src="assets/audio/main.mp3" loop></audio>
+
+
 
 
 <!-- ⭐ MINIMAL STAR LEGEND -->
@@ -297,35 +376,6 @@ planetData.forEach(p=>{
     spin:p[7]
   });
 });
-
-
-/* ================= EARTH MOON ================= */
-const earthMoonGroup = new THREE.Group();
-scene.add(earthMoonGroup);
-
-const moonTexture = loader.load("./assets/planets/moon.png");
-const moonMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(4.2, 32, 32),
-  new THREE.MeshStandardMaterial({
-    map: moonTexture,
-    roughness: 1,
-    metalness: 0
-  })
-);
-
-moonMesh.position.set(26, 0, 0); // distance from Earth
-earthMoonGroup.add(moonMesh);
-
-let moonAngle = Math.random() * Math.PI * 2;
-
-
-
-// Attach Moon to Earth
-const earthPlanet = planets.find(p => p.mesh.userData.info.name === "Earth");
-if (earthPlanet) {
-  earthPlanet.mesh.add(earthMoonGroup);
-}
-
 
 /* ================= ORBIT RINGS ================= */
 planetData.forEach(p=>{
@@ -650,28 +700,17 @@ memoryStars.forEach((star, idx) => {
 
 
 
-/* ===== REAL STAR GLOW (SPRITE HALO) ===== */
-const starGlowTexture = new THREE.TextureLoader().load(
-  "https://threejs.org/examples/textures/sprites/glow.png"
-);
 
+
+
+
+/* ===== SAFE STAR GLOW (NO EXTERNAL ASSETS) ===== */
 memoryStars.forEach(star => {
-  const spriteMat = new THREE.SpriteMaterial({
-    map: starGlowTexture,
-    color: star.material.color,
-    transparent: true,
-    opacity: 0.8,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-
-  const glow = new THREE.Sprite(spriteMat);
-  glow.scale.set(30, 30, 1);
-  star.add(glow);
-
-  star.userData.glow = glow;
+  if (star.material.emissive === undefined) return;
+  star.material.emissive = star.material.color.clone();
+  star.material.emissiveIntensity = 0.6;
+  star.userData._glowPhase = Math.random() * Math.PI * 2;
 });
-
 
 /* ================= OUR MEMORIES ================= */
 const MEMORIES = [
@@ -1130,14 +1169,6 @@ camera.position.copy(
 );
 
 
-  
-  // 🌙 Moon orbit + self rotation
-  if (earthPlanet) {
-    moonAngle += 0.0022;
-    earthMoonGroup.rotation.y = moonAngle;
-    moonMesh.rotation.y += 0.004;
-  }
-
   // ===== Planet readability scale (gentle & realistic) =====
   planets.forEach(p=>{
     const d = camera.position.distanceTo(p.mesh.position);
@@ -1149,28 +1180,12 @@ camera.position.copy(
   });
 
 
-  // ===== STAR ZOOM-AWARE SCALING (REALISTIC, CAPPED) =====
+  // ===== EMISSIVE GLOW PULSE =====
   memoryStars.forEach(star => {
-    if (!star.userData._zoomBaseScale) {
-      star.userData._zoomBaseScale = star.scale.x;
-    }
-
-    const d = camera.position.distanceTo(star.position);
-
-    // Gentle logarithmic scaling so stars stay stars
-    const scale = THREE.MathUtils.clamp(
-      1 + Math.log(d / 400) * 0.25,
-      1.0,
-      1.45
-    );
-
-    star.scale.setScalar(star.userData._zoomBaseScale * scale);
-
-    // Glow scales a bit more than core (brightness illusion)
-    if (star.userData.glow) {
-      const glowScale = 55 * (1 + (scale - 1) * 1.6);
-      star.userData.glow.scale.set(glowScale, glowScale, 1);
-    }
+    if (!star.material.emissive) return;
+    star.userData._glowPhase += 0.01;
+    star.material.emissiveIntensity =
+      0.5 + Math.sin(star.userData._glowPhase) * 0.25;
   });
 
 controls.update();
@@ -1258,6 +1273,118 @@ font-size:11px;
     <div class="close-btn" onclick="closeAll()">Close</div>
   </div>
 </div>
+
+
+<!-- ✅ START SCREEN CONTROLLER (NON-MODULE) -->
+<script>
+(function(){
+  const start = () => {
+    const startScreen = document.getElementById("startScreen");
+    const musicBtn = document.getElementById("musicBtn");
+    const enterBtn = document.getElementById("enterBtn");
+    const bgMusic = document.getElementById("bgMusic");
+
+    if (!startScreen || !musicBtn || !enterBtn || !bgMusic) {
+      console.warn("Start screen elements missing");
+      return;
+    }
+
+    let playing = false;
+
+    musicBtn.addEventListener("click", () => {
+      if (!playing) {
+        bgMusic.play()
+          .then(() => {
+            playing = true;
+            musicBtn.innerText = "⏸ Pause Music";
+          })
+          .catch(err => console.error("Music blocked:", err));
+      } else {
+        bgMusic.pause();
+        playing = false;
+        musicBtn.innerText = "▶ Play Music";
+      }
+    });
+
+    enterBtn.addEventListener("click", () => {
+      startScreen.style.transition = "opacity 1s ease";
+      startScreen.style.opacity = "0";
+      setTimeout(() => {
+        startScreen.style.display = "none";
+        startScreen.style.pointerEvents = "none";
+      }, 1000);
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
+</script>
+
+
+<!-- 🎵 MICRO MUSIC PILL CONTROLLER -->
+<script>
+(function(){
+  const init = () => {
+    const pill = document.getElementById("musicPill");
+    const playBtn = document.getElementById("pillPlay");
+    const vol = document.getElementById("pillVolume");
+    const exitBtn = document.getElementById("pillExit");
+    const bgMusic = document.getElementById("bgMusic");
+    const startScreen = document.getElementById("startScreen");
+    const enterBtn = document.getElementById("enterBtn");
+
+    if(!pill || !playBtn || !vol || !exitBtn || !bgMusic) return;
+
+    bgMusic.volume = vol.value;
+    let playing = false;
+
+    if(enterBtn){
+      enterBtn.addEventListener("click", ()=>{
+        setTimeout(()=> pill.style.display = "flex", 1100);
+      });
+    }
+
+    playBtn.onclick = () => {
+      if(!playing){
+        bgMusic.play().then(()=>{
+          playing = true;
+          playBtn.textContent = "⏸";
+        });
+      }else{
+        bgMusic.pause();
+        playing = false;
+        playBtn.textContent = "▶";
+      }
+    };
+
+    vol.oninput = () => {
+      bgMusic.volume = vol.value;
+    };
+
+    exitBtn.onclick = () => {
+      bgMusic.pause();
+      playing = false;
+      playBtn.textContent = "▶";
+      pill.style.display = "none";
+      if(startScreen){
+        startScreen.style.display = "flex";
+        startScreen.style.opacity = "1";
+        startScreen.style.pointerEvents = "auto";
+      }
+    };
+  };
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+})();
+</script>
 
 </body>
 </html>
