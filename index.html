@@ -101,6 +101,15 @@ html,body{
 }
 </style>
 
+
+<style>
+@keyframes starTwinkle {
+  0%   { opacity: 0.85; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.85; }
+}
+</style>
+
 </head>
 
 <body>
@@ -1079,6 +1088,18 @@ camera.position.copy(
     const scale = THREE.MathUtils.clamp(d / 420, 1, 1.6);
 
     p.mesh.scale.setScalar(scale);
+  });
+
+
+  // ===== STAR SHINE / TWINKLE (REALISTIC) =====
+  memoryStars.forEach(star => {
+    if (star.userData.baseScale === undefined) {
+      star.userData.baseScale = star.scale.x;
+      star.userData.twinkleSpeed = 0.0015 + Math.random() * 0.0025;
+    }
+    const t = Date.now() * star.userData.twinkleSpeed;
+    const pulse = 1 + Math.sin(t) * 0.035;
+    star.scale.setScalar(star.userData.baseScale * pulse);
   });
 
 controls.update();
