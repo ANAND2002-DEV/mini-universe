@@ -368,7 +368,7 @@ const STAR_RINGS=[
 STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
     const star=new THREE.Mesh(
-      new THREE.SphereGeometry(3.5,14,14),
+      new THREE.SphereGeometry(8,20,20),
       new THREE.MeshBasicMaterial({
         color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
       })
@@ -637,7 +637,7 @@ memoryStars.forEach(star => {
   });
 
   const glow = new THREE.Sprite(spriteMat);
-  glow.scale.set(55, 55, 1);
+  glow.scale.set(30, 30, 1);
   star.add(glow);
 
   star.userData.glow = glow;
@@ -1112,23 +1112,30 @@ camera.position.copy(
   });
 
 
-  // ===== REAL STAR TWINKLE (SAFE) =====
+  // ===== STAR ZOOM-AWARE SCALING (LIKE PLANETS) =====
   memoryStars.forEach(star => {
-    if (!star.userData._twinkleInit) {
-      star.userData._twinkleInit = true;
-      star.userData._baseScale = star.scale.x;
-      star.userData._twinkleSpeed = 0.001 + Math.random() * 0.002;
+    if (!star.userData._zoomBaseScale) {
+      star.userData._zoomBaseScale = star.scale.x;
     }
 
-    const t = Date.now() * star.userData._twinkleSpeed;
-    const pulse = 1 + Math.sin(t) * 0.045;
+    const d = camera.position.distanceTo(star.position);
 
-    // subtle core pulse
-    star.scale.setScalar(star.userData._baseScale * pulse);
+    // Farther = visually bigger, closer = normal size
+    const scale = THREE.MathUtils.clamp(
+      d / 520,   // tuning value
+      1.0,
+      2.4
+    );
 
-    // glow breath
+    star.scale.setScalar(star.userData._zoomBaseScale * scale);
+
+    // keep glow halo in sync
     if (star.userData.glow) {
-      star.userData.glow.material.opacity = 0.55 + Math.sin(t) * 0.25;
+      star.userData.glow.scale.set(
+        55 * scale,
+        55 * scale,
+        1
+      );
     }
   });
 
