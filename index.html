@@ -377,6 +377,28 @@ planetData.forEach(p=>{
   });
 });
 
+
+/* ================= EARTH MOON ================= */
+const earthMoonGroup = new THREE.Group();
+const moonTexture = loader.load("./assets/planets/moon.png");
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(5, 32, 32),
+  new THREE.MeshStandardMaterial({
+    map: moonTexture,
+    roughness: 1,
+    metalness: 0
+  })
+);
+moonMesh.position.set(32, 0, 0);
+earthMoonGroup.add(moonMesh);
+
+// Attach moon to Earth
+const earthPlanet = planets.find(p => p.mesh.userData.info.name === "Earth");
+if (earthPlanet) {
+  earthPlanet.mesh.add(earthMoonGroup);
+}
+
+
 /* ================= ORBIT RINGS ================= */
 planetData.forEach(p=>{
   const curve=new THREE.EllipseCurve(0,0,p[2],p[2],0,Math.PI*2);
@@ -1168,6 +1190,13 @@ camera.position.copy(
   )
 );
 
+
+  
+  // 🌙 Earth Moon orbit & rotation
+  if (earthPlanet) {
+    earthMoonGroup.rotation.y += 0.002;
+    moonMesh.rotation.y += 0.004;
+  }
 
   // ===== Planet readability scale (gentle & realistic) =====
   planets.forEach(p=>{
