@@ -1328,5 +1328,41 @@ font-size:11px;
 })();
 </script>
 
+
+// ===== EXIT UNIVERSE BUTTON LOGIC =====
+(function(){
+  const bindExit = () => {
+    const exitBtn = document.getElementById("exitUniverseBtn");
+    const startScreen = document.getElementById("startScreen");
+    const musicPanel = document.getElementById("musicPanel");
+    const bgMusic = document.getElementById("bgMusic");
+
+    if (!exitBtn || !startScreen) return;
+
+    exitBtn.addEventListener("click", () => {
+      // pause music
+      if (bgMusic) {
+        bgMusic.pause();
+      }
+
+      // hide music panel
+      if (musicPanel) {
+        musicPanel.style.display = "none";
+      }
+
+      // show start screen again
+      startScreen.style.display = "flex";
+      startScreen.style.opacity = "1";
+      startScreen.style.pointerEvents = "auto";
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindExit);
+  } else {
+    bindExit();
+  }
+})();
+
 </body>
 </html>
