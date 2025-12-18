@@ -105,6 +105,45 @@ html,body{
 
 <body>
 
+<!-- 🎵 IN-UNIVERSE MUSIC PANEL -->
+<div id="musicPanel" style="
+  position:fixed;
+  top:14px;
+  left:14px;
+  z-index:4000;
+  display:none;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  background:rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  border-radius:14px;
+  color:#fff;
+  font-family:system-ui;
+">
+  <button id="panelPlayBtn" style="
+    background:rgba(255,255,255,0.15);
+    border:none;
+    color:#fff;
+    padding:6px 10px;
+    border-radius:10px;
+    cursor:pointer;
+  ">⏸</button>
+
+  <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.7"
+    style="width:80px; cursor:pointer;">
+
+  <button id="exitUniverseBtn" style="
+    background:rgba(255,120,200,0.25);
+    border:none;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:10px;
+    cursor:pointer;
+  ">Exit</button>
+</div>
+
+
 <!-- 🎬 START SCREEN -->
 <div id="startScreen" style="
   position:fixed;
