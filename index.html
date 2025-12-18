@@ -91,22 +91,6 @@ html,body{
     "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
   }
 }
-
-/* ===== MOBILE RESET VIEW BUTTON LOGIC ===== */
-if (__isMobileCtrl) {
-  const resetBtn = document.getElementById("mobileResetView");
-  if (resetBtn) {
-    resetBtn.style.display = "block";
-
-    resetBtn.addEventListener("click", () => {
-      // Reset camera to system view (Sun)
-      controls.target.set(0, 0, 0);
-      camera.position.set(0, 120, 260);
-      controls.update();
-    });
-  }
-}
-
 </script>
 
 <style>
@@ -120,24 +104,6 @@ if (__isMobileCtrl) {
 </head>
 
 <body>
-
-<!-- 📱 MOBILE RESET VIEW BUTTON -->
-<button id="mobileResetView" style="
-  position:fixed;
-  right:14px;
-  bottom:14px;
-  z-index:6000;
-  display:none;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  border:none;
-  background:rgba(0,0,0,0.35);
-  color:#fff;
-  font-size:18px;
-  backdrop-filter:blur(8px);
-">⟳</button>
-
 
 <!-- 🎵 MICRO MUSIC CONTROL PILL -->
 <div id="musicPill" style="
