@@ -368,7 +368,7 @@ const STAR_RINGS=[
 STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
     const star=new THREE.Mesh(
-      new THREE.SphereGeometry(8,20,20),
+      new THREE.SphereGeometry(3.5,14,14),
       new THREE.MeshBasicMaterial({
         color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
       })
@@ -637,7 +637,7 @@ memoryStars.forEach(star => {
   });
 
   const glow = new THREE.Sprite(spriteMat);
-  glow.scale.set(30, 30, 1);
+  glow.scale.set(55, 55, 1);
   star.add(glow);
 
   star.userData.glow = glow;
@@ -1109,6 +1109,27 @@ camera.position.copy(
     const scale = THREE.MathUtils.clamp(d / 420, 1, 1.6);
 
     p.mesh.scale.setScalar(scale);
+  });
+
+
+  // ===== REAL STAR TWINKLE (SAFE) =====
+  memoryStars.forEach(star => {
+    if (!star.userData._twinkleInit) {
+      star.userData._twinkleInit = true;
+      star.userData._baseScale = star.scale.x;
+      star.userData._twinkleSpeed = 0.001 + Math.random() * 0.002;
+    }
+
+    const t = Date.now() * star.userData._twinkleSpeed;
+    const pulse = 1 + Math.sin(t) * 0.045;
+
+    // subtle core pulse
+    star.scale.setScalar(star.userData._baseScale * pulse);
+
+    // glow breath
+    if (star.userData.glow) {
+      star.userData.glow.material.opacity = 0.55 + Math.sin(t) * 0.25;
+    }
   });
 
 controls.update();
