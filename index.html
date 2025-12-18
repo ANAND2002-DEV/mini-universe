@@ -92,33 +92,44 @@ html,body{
   }
 }
 
-/* ================= START SCREEN LOGIC ================= */
-const startScreen = document.getElementById("startScreen");
-const bgMusic = document.getElementById("bgMusic");
-const musicBtn = document.getElementById("musicBtn");
-const enterBtn = document.getElementById("enterBtn");
+/* ================= START SCREEN LOGIC (FIXED) ================= */
+window.addEventListener("DOMContentLoaded", () => {
+  const startScreen = document.getElementById("startScreen");
+  const bgMusic = document.getElementById("bgMusic");
+  const musicBtn = document.getElementById("musicBtn");
+  const enterBtn = document.getElementById("enterBtn");
 
-let musicPlaying = false;
-
-musicBtn.onclick = () => {
-  if (!musicPlaying) {
-    bgMusic.play();
-    musicPlaying = true;
-    musicBtn.innerText = "⏸ Pause Music";
-  } else {
-    bgMusic.pause();
-    musicPlaying = false;
-    musicBtn.innerText = "▶ Play Music";
+  if (!startScreen || !bgMusic || !musicBtn || !enterBtn) {
+    console.warn("Start screen elements not found");
+    return;
   }
-};
 
-enterBtn.onclick = () => {
-  startScreen.style.transition = "opacity 1.2s ease";
-  startScreen.style.opacity = "0";
-  setTimeout(() => {
-    startScreen.style.display = "none";
-  }, 1200);
-};
+  let musicPlaying = false;
+
+  musicBtn.addEventListener("click", () => {
+    if (!musicPlaying) {
+      bgMusic.play().then(() => {
+        musicPlaying = true;
+        musicBtn.innerText = "⏸ Pause Music";
+      }).catch(err => {
+        console.error("Music play blocked:", err);
+      });
+    } else {
+      bgMusic.pause();
+      musicPlaying = false;
+      musicBtn.innerText = "▶ Play Music";
+    }
+  });
+
+  enterBtn.addEventListener("click", () => {
+    startScreen.style.transition = "opacity 1s ease";
+    startScreen.style.opacity = "0";
+    setTimeout(() => {
+      startScreen.style.display = "none";
+      startScreen.style.pointerEvents = "none";
+    }, 1000);
+  });
+});
 
 </script>
 
@@ -133,49 +144,6 @@ enterBtn.onclick = () => {
 </head>
 
 <body>
-
-<!-- 🎬 START SCREEN -->
-<div id="startScreen" style="
-  position:fixed;
-  inset:0;
-  background:radial-gradient(circle at center, #050505, #000);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:5000;
-  color:#fff;
-  text-align:center;
-">
-  <h1 style="font-size:34px; margin-bottom:10px;">✨ Mini Universe ✨</h1>
-  <p style="opacity:0.75; margin-bottom:30px;">A universe made of memories</p>
-
-  <div style="display:flex; gap:16px; margin-bottom:30px;">
-    <button id="musicBtn" style="
-      padding:10px 18px;
-      border-radius:14px;
-      border:none;
-      cursor:pointer;
-      font-size:14px;
-      background:#1f6fff;
-      color:#fff;
-    ">▶ Play Music</button>
-  </div>
-
-  <button id="enterBtn" style="
-    padding:14px 28px;
-    border-radius:20px;
-    border:none;
-    cursor:pointer;
-    font-size:16px;
-    background:linear-gradient(135deg,#ff77cc,#7b3fe4);
-    color:#fff;
-    box-shadow:0 0 30px rgba(255,120,200,0.6);
-  ">✨ Enter Universe ✨</button>
-</div>
-
-<audio id="bgMusic" src="assets/audio/main.mp3" loop></audio>
-
 
 
 
@@ -440,7 +408,7 @@ const STAR_RINGS=[
 STAR_RINGS.forEach((ring,ri)=>{
   for(let i=0;i<ring.count;i++){
     const star=new THREE.Mesh(
-      new THREE.SphereGeometry(8,20,20),
+      new THREE.SphereGeometry(3.5,14,14),
       new THREE.MeshBasicMaterial({
         color:STAR_COLORS[(i+ri)%STAR_COLORS.length]
       })
@@ -709,7 +677,7 @@ memoryStars.forEach(star => {
   });
 
   const glow = new THREE.Sprite(spriteMat);
-  glow.scale.set(30, 30, 1);
+  glow.scale.set(55, 55, 1);
   star.add(glow);
 
   star.userData.glow = glow;
@@ -1184,27 +1152,23 @@ camera.position.copy(
   });
 
 
-  // ===== STAR ZOOM-AWARE SCALING (REALISTIC, CAPPED) =====
+  // ===== REAL STAR TWINKLE (SAFE) =====
   memoryStars.forEach(star => {
-    if (!star.userData._zoomBaseScale) {
-      star.userData._zoomBaseScale = star.scale.x;
+    if (!star.userData._twinkleInit) {
+      star.userData._twinkleInit = true;
+      star.userData._baseScale = star.scale.x;
+      star.userData._twinkleSpeed = 0.001 + Math.random() * 0.002;
     }
 
-    const d = camera.position.distanceTo(star.position);
+    const t = Date.now() * star.userData._twinkleSpeed;
+    const pulse = 1 + Math.sin(t) * 0.045;
 
-    // Gentle logarithmic scaling so stars stay stars
-    const scale = THREE.MathUtils.clamp(
-      1 + Math.log(d / 400) * 0.25,
-      1.0,
-      1.45
-    );
+    // subtle core pulse
+    star.scale.setScalar(star.userData._baseScale * pulse);
 
-    star.scale.setScalar(star.userData._zoomBaseScale * scale);
-
-    // Glow scales a bit more than core (brightness illusion)
+    // glow breath
     if (star.userData.glow) {
-      const glowScale = 55 * (1 + (scale - 1) * 1.6);
-      star.userData.glow.scale.set(glowScale, glowScale, 1);
+      star.userData.glow.material.opacity = 0.55 + Math.sin(t) * 0.25;
     }
   });
 
