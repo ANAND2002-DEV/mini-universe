@@ -934,28 +934,61 @@ if(obj.userData.type==="planet"){
     lastFocus = obj;
     lastFocusZoom = zoomTarget;
     closeAll();
+
+    const isSneha = b.title.includes("Sneha");
+    const countdown = getBirthdayCountdown(
+      isSneha ? 7 : 8,
+      isSneha ? 4 : 23
+    );
+
     document.getElementById("shayariText").innerHTML =
       "<strong>" + b.title + "</strong>\n" +
-      b.date + "\n\n" +
-      b.message +
-      "\n\n<button id='birthdayMsgBtn' style=\"margin-top:12px;padding:8px 14px;border:none;border-radius:10px;background:#ff77cc;color:#000;cursor:pointer;font-weight:bold;\">View Birthday Message</button>";
+      b.date + "\n" +
+      "<strong>" + countdown + "</strong>\n\n" +
+      "<button id='birthdayMsgBtn' style=\"margin-top:12px;padding:8px 14px;border:none;border-radius:10px;background:#ff77cc;color:#000;cursor:pointer;font-weight:bold;\">View Birthday Message</button>";
+
+    document.getElementById("shayariModal").style.display = "flex";
 
     setTimeout(()=>{
       const btn = document.getElementById("birthdayMsgBtn");
       if(btn){
         btn.onclick = ()=>{
           document.getElementById("shayariText").innerText =
-            b.title + "\n" + b.date + "\n\n" +
-            "This day exists only because you were born.\n" +
-            "May this star always remind you how special you are.\n\n" +
-            getBirthdayCountdown(
-              b.title.includes("Sneha") ? 7 : 8,
-              b.title.includes("Sneha") ? 4 : 23
-            );
+`Aaj sirf tumhara din nahi hai 💗
+Aaj meri poori kaynat ka jashn hai ✨  
+
+Tumhari muskaan se  
+mere andhere bhi roshan ho jaate hain 🌙  
+Aur tumhari awaaz se  
+meri har thakaan utar jaati hai 🤍  
+
+Is sitare ke neeche bas itna kehna tha 🌸  
+Tum meri zindagi ka wo hissa ho  
+jiske bina sab kuch adhoora lagta hai 💫  
+
+🎂 Happy Birthday, Sneha  
+Aaj bhi… aur hamesha bhi 🤍`;
+          if(!isSneha){
+            document.getElementById("shayariText").innerText =
+`Is din sirf main paida nahi hua tha 💜  
+Is din se shayad meri zindagi  
+tumhara intezaar karna seekh rahi thi ✨  
+
+Paida hone se lekar aaj tak 🌙  
+maine bahut log dekhe,  
+bahut rishte mehsoos kiye,  
+par jis shiddat se tumhari kami mehsoos hoti thi…  
+wo sirf tum hi ho 🤍  
+
+Aaj samajh aata hai 💫  
+tum sirf meri mohabbat nahi,  
+tum wo jawab ho  
+jiska sawaal meri zindagi hamesha thi 🌌`;
+          }
         };
       }
     },0);
-    document.getElementById("shayariModal").style.display = "flex";
+
     return;
   }
 
